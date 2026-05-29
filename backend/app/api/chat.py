@@ -128,8 +128,11 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                         "type": "agent_start", "agent": name, "timestamp": _now(),
                     })
 
-                # 流式 token（只推送非 coordinator 的，coordinator 的输出是路由决策不是用户内容）
-                if kind == "on_chat_model_stream" and current_agent != "coordinator":
+                # 流式 token（只推送适合直接展示的 Agent 输出）
+                # coordinator 输出是路由决策，planner/assessor 输出是 JSON 需要后处理
+                if kind == "on_chat_model_stream" and current_agent in (
+                    "tutor", "generator", "profiler"
+                ):
                     chunk = event.get("data", {}).get("chunk")
                     if chunk and hasattr(chunk, "content") and chunk.content:
                         await websocket.send_json({
