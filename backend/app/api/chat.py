@@ -84,6 +84,15 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             message = raw.get("message", "")
             llm_cfg = raw.get("llm_config", {})
 
+            # 如果前端未提供有效 api_key，回退到后端默认配置
+            if not llm_cfg.get("api_key"):
+                default_config = get_llm_config()
+                llm_cfg = {
+                    "api_key": default_config.api_key,
+                    "base_url": default_config.base_url,
+                    "model": default_config.model,
+                }
+
             state = sessions[session_id]
             state["messages"] = list(state["messages"]) + [HumanMessage(content=message)]
             state["llm_config"] = llm_cfg
