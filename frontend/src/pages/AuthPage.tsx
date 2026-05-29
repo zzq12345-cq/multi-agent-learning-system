@@ -7,6 +7,7 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
@@ -109,6 +110,19 @@ export default function AuthPage() {
             <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-[10px] text-red-600">
               {error}
             </div>
+          )}
+
+          {/* 记住我 */}
+          {isLogin && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
+              />
+              <span className="text-[10px] text-zinc-500">记住我</span>
+            </label>
           )}
 
           <button
