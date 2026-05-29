@@ -1,10 +1,11 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore } from '../stores/useAppStore'
 import { Brain, Home } from 'lucide-react'
 import { AGENTS } from '../types'
 
 export default function Header() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { activeAgent, user, logout } = useAppStore()
 
   // 获取当前活跃 Agent 的信息
@@ -34,6 +35,25 @@ export default function Header() {
             </span>
           </div>
         )}
+
+        <nav className="flex items-center gap-1 ml-4">
+          <button
+            onClick={() => navigate('/learn')}
+            className={`px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all ${
+              location.pathname === '/learn' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'
+            }`}
+          >
+            学习
+          </button>
+          <button
+            onClick={() => navigate('/social')}
+            className={`px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all ${
+              location.pathname === '/social' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'
+            }`}
+          >
+            社区
+          </button>
+        </nav>
       </div>
 
       <div className="flex items-center gap-2">
