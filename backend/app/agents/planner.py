@@ -4,6 +4,7 @@ import json
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
+from app.services.learning_engine import init_node_states
 
 PLANNER_PROMPT = """你是一个学习路径规划专家（Planner Agent）。
 你的职责是根据学生画像和学习目标，设计个性化的学习路径。
@@ -70,9 +71,11 @@ async def planner_node(state: AgentState) -> dict:
 
     if learning_path:
         summary = _generate_path_summary(learning_path)
+        node_states = init_node_states(learning_path)
         return {
             "messages": [AIMessage(content=summary, name="planner")],
             "learning_path": learning_path,
+            "node_states": node_states,
             "next_agent": END,
             "agent_outputs": {
                 **state.get("agent_outputs", {}),

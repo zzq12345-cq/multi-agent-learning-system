@@ -4,6 +4,7 @@ import json
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
+from app.services.learning_engine import complete_node
 
 ASSESSOR_PROMPT = """你是一个学习评估专家（Assessor Agent）。
 你的职责是评估学生的学习效果，生成测试题，并给出反馈。
@@ -74,8 +75,19 @@ async def assessor_node(state: AgentState) -> dict:
     else:
         formatted = content
 
+    # 更新节点状态
+    node_states = state.get("node_states", {})
+    current = state.get("current_node", {})
+    learning_path = state.get("learning_path", {})
+
+    if result and "score" in result and current and current.get("id"):
+        score = result.get("score", 0)
+        if score >= 60:  # 60 分及格，标记完成
+            node_states = complete_node(current["id"], score, learning_path, node_states)
+
     return {
         "messages": [AIMessage(content=formatted, name="assessor")],
+        "node_states": node_states,
         "next_agent": END,
         "agent_outputs": {
             **state.get("agent_outputs", {}),

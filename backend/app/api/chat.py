@@ -29,6 +29,7 @@ class ChatResponse(BaseModel):
     agent_outputs: dict = {}
     learning_path: dict | None = None
     user_profile: dict | None = None
+    node_states: dict | None = None
 
 
 def _now() -> int:
@@ -63,6 +64,7 @@ async def send_message(req: ChatRequest):
         agent_outputs=result.get("agent_outputs", {}),
         learning_path=result.get("learning_path") or None,
         user_profile=result.get("user_profile") or None,
+        node_states=result.get("node_states") or None,
     )
 
 
@@ -165,6 +167,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                 "agent_outputs": final_state.get("agent_outputs", {}),
                 "learning_path": final_state.get("learning_path"),
                 "user_profile": final_state.get("user_profile"),
+                "node_states": final_state.get("node_states"),
                 "timestamp": _now(),
             })
 
@@ -217,6 +220,7 @@ def _create_initial_state(session_id: str) -> dict:
         "current_intent": "",
         "learning_path": {},
         "current_node": {},
+        "node_states": {},
         "agent_outputs": {},
         "next_agent": "",
         "metadata": {},

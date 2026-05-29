@@ -15,6 +15,7 @@ export interface ChatResponse {
   agent_outputs: Record<string, string>
   learning_path: LearningPath | null
   user_profile: StudentProfile | null
+  node_states?: Record<string, { status: string; score?: number | null }> | null
 }
 
 export interface LearningPath {
@@ -87,6 +88,7 @@ export interface WSEvent {
   agent_outputs?: Record<string, string>
   learning_path?: LearningPath | null
   user_profile?: StudentProfile | null
+  node_states?: Record<string, { status: string; score?: number | null }> | null
   error?: string
   timestamp?: number
 }

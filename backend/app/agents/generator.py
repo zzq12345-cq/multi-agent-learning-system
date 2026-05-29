@@ -3,6 +3,7 @@
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
+from app.services.learning_engine import start_node
 
 GENERATOR_PROMPT = """你是一个学习资源生成专家（Generator Agent）。
 你的职责是根据知识点和学生画像，生成高质量的个性化学习资源。
@@ -51,8 +52,15 @@ async def generator_node(state: AgentState) -> dict:
     recent_messages = state["messages"][-5:]
     response = await llm.ainvoke([system_msg] + list(recent_messages))
 
+    # 更新节点状态为学习中
+    node_states = state.get("node_states", {})
+    current = state.get("current_node", {})
+    if current and current.get("id"):
+        node_states = start_node(current["id"], node_states)
+
     return {
         "messages": [AIMessage(content=response.content, name="generator")],
+        "node_states": node_states,
         "next_agent": END,
         "agent_outputs": {
             **state.get("agent_outputs", {}),

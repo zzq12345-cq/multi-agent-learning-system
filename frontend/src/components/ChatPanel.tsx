@@ -80,6 +80,14 @@ export default function ChatPanel() {
         if (event.agent_outputs) store.setAgentOutputs(event.agent_outputs)
         if (event.learning_path) store.setLearningPath(event.learning_path)
         if (event.user_profile) store.setProfile(event.user_profile)
+        if (event.node_states) {
+          const states = Object.entries(event.node_states).map(([nodeId, s]) => ({
+            nodeId,
+            status: s.status as any,
+            score: s.score ?? undefined,
+          }))
+          store.setNodeStates(states)
+        }
         store.setActiveAgent(null)
         store.setLoading(false)
         store.clearStreamingContent()

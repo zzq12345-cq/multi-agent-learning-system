@@ -26,6 +26,7 @@ class AgentState(TypedDict):
     current_intent: str
     learning_path: dict
     current_node: dict
+    node_states: dict  # 节点状态 {node_id: {status, score}}
     agent_outputs: dict
     next_agent: str
     metadata: dict
