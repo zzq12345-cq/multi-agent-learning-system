@@ -84,14 +84,6 @@ export default function LearningPage() {
 
         {/* 中间：对话 */}
         <div className="flex-1 min-w-0 border-r border-gray-200 relative">
-          {/* 右侧面板切换按钮 */}
-          <button
-            onClick={() => setRightCollapsed(!rightCollapsed)}
-            className="hidden lg:flex absolute top-3 right-3 z-10 w-7 h-7 items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-all shadow-sm"
-            title={rightCollapsed ? '展开面板' : '收起面板'}
-          >
-            {rightCollapsed ? <ChevronsLeft className="w-3.5 h-3.5" /> : <ChevronsRight className="w-3.5 h-3.5" />}
-          </button>
           {/* 移动端顶部工具栏 */}
           <div className="lg:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white">
             <button
@@ -110,6 +102,15 @@ export default function LearningPage() {
           </div>
           <ChatPanel />
         </div>
+
+        {/* 右侧面板折叠按钮 */}
+        <button
+          onClick={() => setRightCollapsed(!rightCollapsed)}
+          className="hidden lg:flex w-5 flex-shrink-0 items-center justify-center hover:bg-gray-100 transition-colors border-l border-gray-200 cursor-pointer"
+          title={rightCollapsed ? '展开面板' : '收起面板'}
+        >
+          {rightCollapsed ? <ChevronsLeft className="w-3 h-3 text-gray-400" /> : <ChevronsRight className="w-3 h-3 text-gray-400" />}
+        </button>
 
         {/* 右侧：图谱/进度 — 桌面端常驻 */}
         {!rightCollapsed && (
