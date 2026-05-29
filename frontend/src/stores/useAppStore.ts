@@ -4,6 +4,11 @@ import { create } from 'zustand'
 import type { ChatMessage, LearningPath, StudentProfile, AgentTrace, NodeState } from '../types'
 
 interface AppState {
+  // 用户认证
+  user: { userId: string; username: string; token: string } | null
+  setUser: (user: { userId: string; username: string; token: string } | null) => void
+  logout: () => void
+
   sessionId: string
   setSessionId: (id: string) => void
 
@@ -54,6 +59,32 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
+  user: (() => {
+    const token = localStorage.getItem('auth_token')
+    const username = localStorage.getItem('auth_username')
+    const userId = localStorage.getItem('auth_user_id')
+    if (token && username && userId) return { token, username, userId }
+    return null
+  })(),
+  setUser: (user) => {
+    if (user) {
+      localStorage.setItem('auth_token', user.token)
+      localStorage.setItem('auth_username', user.username)
+      localStorage.setItem('auth_user_id', user.userId)
+    } else {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_username')
+      localStorage.removeItem('auth_user_id')
+    }
+    set({ user })
+  },
+  logout: () => {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('auth_username')
+    localStorage.removeItem('auth_user_id')
+    set({ user: null })
+  },
+
   sessionId: crypto.randomUUID(),
   setSessionId: (id) => set({ sessionId: id }),
 

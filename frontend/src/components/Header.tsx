@@ -5,7 +5,7 @@ import { AGENTS } from '../types'
 
 export default function Header() {
   const navigate = useNavigate()
-  const { setShowSettings, activeAgent } = useAppStore()
+  const { setShowSettings, activeAgent, user, logout } = useAppStore()
 
   // 获取当前活跃 Agent 的信息
   const activeAgentInfo = activeAgent ? AGENTS[activeAgent] : null
@@ -36,6 +36,17 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2">
+        {user && (
+          <div className="flex items-center gap-2 mr-2">
+            <span className="text-[10px] text-zinc-500">{user.username}</span>
+            <button
+              onClick={() => { logout(); window.location.href = '/auth' }}
+              className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors"
+            >
+              退出
+            </button>
+          </div>
+        )}
         <button
           onClick={() => navigate('/')}
           className="p-1.5 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg transition-all active:scale-95"

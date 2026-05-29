@@ -1,0 +1,138 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAppStore } from '../stores/useAppStore'
+import { Brain, LogIn, UserPlus } from 'lucide-react'
+
+export default function AuthPage() {
+  const [isLogin, setIsLogin] = useState(true)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const { setUser } = useAppStore()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register'
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.detail || (isLogin ? '用户名或密码错误' : '注册失败'))
+      }
+
+      const data = await res.json()
+      setUser({ userId: data.user_id, username: data.username, token: data.token })
+      navigate('/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '请求失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-grid-pattern flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex p-2 bg-zinc-900 rounded-xl shadow-sm mb-4">
+            <Brain className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-lg font-bold text-zinc-900">智学多Agent系统</h1>
+          <p className="text-xs text-zinc-400 mt-1">个性化多智能体协同学习平台</p>
+        </div>
+
+        {/* Tab 切换 */}
+        <div className="flex mb-6 bg-zinc-100 rounded-lg p-0.5">
+          <button
+            onClick={() => { setIsLogin(true); setError('') }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-all ${
+              isLogin ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'
+            }`}
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            登录
+          </button>
+          <button
+            onClick={() => { setIsLogin(false); setError('') }}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-all ${
+              !isLogin ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            注册
+          </button>
+        </div>
+
+        {/* 表单 */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+              用户名
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="输入用户名"
+              required
+              minLength={2}
+              className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">
+              密码
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="输入密码"
+              required
+              minLength={4}
+              className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 transition-colors"
+            />
+          </div>
+          {error && (
+            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-[10px] text-red-600">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium rounded-xl transition-all disabled:opacity-50 active:scale-[0.98]"
+          >
+            {loading ? '处理中...' : isLogin ? '登录' : '注册'}
+          </button>
+        </form>
+
+        {/* 底部提示 */}
+        <p className="text-center text-[10px] text-zinc-400 mt-6">
+          {isLogin ? '没有账号？' : '已有账号？'}
+          <button
+            onClick={() => { setIsLogin(!isLogin); setError('') }}
+            className="text-zinc-700 font-medium ml-1 hover:underline"
+          >
+            {isLogin ? '立即注册' : '去登录'}
+          </button>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+
