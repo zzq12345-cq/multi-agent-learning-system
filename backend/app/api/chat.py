@@ -134,10 +134,19 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                     await websocket.send_json({
                         "type": "agent_end", "agent": current_agent, "timestamp": _now(),
                     })
+                    # 生成路由理由
+                    route_reasons = {
+                        "profiler": "检测到需要评估学习水平",
+                        "planner": "准备规划个性化学习路径",
+                        "generator": "开始生成定制学习资源",
+                        "tutor": "进入答疑解惑模式",
+                        "assessor": "启动学习效果评估",
+                    }
                     await websocket.send_json({
                         "type": "route",
                         "route_from": current_agent,
                         "route_to": name,
+                        "reasoning": route_reasons.get(name, ""),
                         "timestamp": _now(),
                     })
                     current_agent = name

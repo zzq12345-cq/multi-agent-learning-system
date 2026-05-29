@@ -85,6 +85,7 @@ export interface WSEvent {
   content?: string
   route_from?: string
   route_to?: string
+  reasoning?: string
   agent_outputs?: Record<string, string>
   learning_path?: LearningPath | null
   user_profile?: StudentProfile | null
@@ -98,6 +99,7 @@ export interface AgentTrace {
   action: 'start' | 'end' | 'route'
   timestamp: number
   detail?: string
+  reasoning?: string
 }
 
 export type NodeStatus = 'locked' | 'available' | 'in_progress' | 'completed'
