@@ -1,21 +1,17 @@
 import { useNavigate } from 'react-router-dom'
-import { useAppStore } from '../stores/useAppStore'
-import SettingsModal from '../components/SettingsModal'
-import { 
-  Brain, 
-  Settings, 
-  ArrowRight, 
-  Cpu, 
-  Sparkles, 
-  Compass, 
-  Wand2, 
-  BookOpen, 
-  ShieldCheck 
+import {
+  Brain,
+  ArrowRight,
+  Cpu,
+  Sparkles,
+  Compass,
+  Wand2,
+  BookOpen,
+  ShieldCheck
 } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { setShowSettings, showSettings } = useAppStore()
 
   const handleStart = () => {
     navigate('/learn')
@@ -42,14 +38,6 @@ export default function HomePage() {
             智学多Agent系统
           </span>
         </div>
-        
-        <button
-          onClick={() => setShowSettings(true)}
-          className="px-3.5 py-1.5 text-xs text-zinc-600 hover:text-zinc-900 border border-zinc-200 bg-white hover:bg-zinc-50 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 flex items-center gap-1.5 active:scale-95"
-        >
-          <Settings className="w-3.5 h-3.5" />
-          系统配置
-        </button>
       </header>
 
       {/* Hero */}
@@ -107,8 +95,6 @@ export default function HomePage() {
       <footer className="py-6 text-center text-[10px] text-zinc-400 relative z-10 border-t border-zinc-200/30 font-mono">
         © 2026 智学多智能体个性化学习平台. All rights reserved.
       </footer>
-
-      {showSettings && <SettingsModal />}
     </div>
   )
 }

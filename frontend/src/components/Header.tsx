@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../stores/useAppStore'
-import { Brain, Home, Settings } from 'lucide-react'
+import { Brain, Home } from 'lucide-react'
 import { AGENTS } from '../types'
 
 export default function Header() {
   const navigate = useNavigate()
-  const { setShowSettings, activeAgent, user, logout } = useAppStore()
+  const { activeAgent, user, logout } = useAppStore()
 
   // 获取当前活跃 Agent 的信息
   const activeAgentInfo = activeAgent ? AGENTS[activeAgent] : null
@@ -53,13 +53,6 @@ export default function Header() {
           title="首页"
         >
           <Home className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="p-1.5 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg transition-all active:scale-95"
-          title="系统配置"
-        >
-          <Settings className="w-4 h-4" />
         </button>
       </div>
     </header>

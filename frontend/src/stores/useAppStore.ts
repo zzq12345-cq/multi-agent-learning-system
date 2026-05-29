@@ -12,10 +12,6 @@ interface AppState {
   sessionId: string
   setSessionId: (id: string) => void
 
-  llmConfig: { apiKey: string; baseUrl: string; model: string }
-  setLlmConfig: (config: { apiKey: string; baseUrl: string; model: string }) => void
-  isConfigured: () => boolean
-
   messages: ChatMessage[]
   addMessage: (msg: ChatMessage) => void
   updateLastAssistantContent: (content: string) => void
@@ -48,9 +44,6 @@ interface AppState {
   profile: StudentProfile | null
   setProfile: (profile: StudentProfile | null) => void
 
-  showSettings: boolean
-  setShowSettings: (show: boolean) => void
-
   rightPanel: 'graph' | 'progress'
   setRightPanel: (panel: 'graph' | 'progress') => void
 
@@ -58,7 +51,7 @@ interface AppState {
   setWsConnected: (connected: boolean) => void
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set) => ({
   user: (() => {
     const token = localStorage.getItem('auth_token')
     const username = localStorage.getItem('auth_username')
@@ -87,19 +80,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   sessionId: crypto.randomUUID(),
   setSessionId: (id) => set({ sessionId: id }),
-
-  llmConfig: {
-    apiKey: localStorage.getItem('llm_api_key') || '',
-    baseUrl: localStorage.getItem('llm_base_url') || 'https://api.deepseek.com/v1',
-    model: localStorage.getItem('llm_model') || 'deepseek-chat',
-  },
-  setLlmConfig: (config) => {
-    localStorage.setItem('llm_api_key', config.apiKey)
-    localStorage.setItem('llm_base_url', config.baseUrl)
-    localStorage.setItem('llm_model', config.model)
-    set({ llmConfig: config })
-  },
-  isConfigured: () => !!get().llmConfig.apiKey,
 
   messages: [],
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
@@ -151,9 +131,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   profile: null,
   setProfile: (profile) => set({ profile }),
-
-  showSettings: false,
-  setShowSettings: (show) => set({ showSettings: show }),
 
   rightPanel: 'graph',
   setRightPanel: (panel) => set({ rightPanel: panel }),

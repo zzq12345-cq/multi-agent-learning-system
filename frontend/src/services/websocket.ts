@@ -40,18 +40,11 @@ class AgentWebSocket {
     })
   }
 
-  send(message: string, llmConfig: { apiKey: string; baseUrl: string; model: string }) {
+  send(message: string) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error('WebSocket 未连接')
     }
-    // 不发送 api_key，由后端从环境变量读取
-    this.ws.send(JSON.stringify({
-      message,
-      llm_config: {
-        base_url: llmConfig.baseUrl,
-        model: llmConfig.model,
-      },
-    }))
+    this.ws.send(JSON.stringify({ message }))
   }
 
   onEvent(handler: EventHandler) {

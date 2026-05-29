@@ -11,7 +11,7 @@ export default function ChatPanel() {
   const wsRef = useRef<AgentWebSocket | null>(null)
 
   const {
-    messages, addMessage, sessionId, llmConfig,
+    messages, addMessage, sessionId,
     isLoading, setLoading, setActiveAgent, setAgentOutputs,
     setLearningPath, setProfile,
     clearTraces,
@@ -125,7 +125,7 @@ export default function ChatPanel() {
     clearStreamingContent()
 
     if (wsRef.current?.connected) {
-      wsRef.current.send(text, llmConfig)
+      wsRef.current.send(text)
     } else {
       // REST 回退
       try {
