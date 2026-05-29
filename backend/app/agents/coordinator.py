@@ -3,6 +3,7 @@
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, PROFILER, PLANNER, GENERATOR, TUTOR, ASSESSOR, END
 from app.deps import LLMConfig
+from app.services.memory import build_context_summary, get_conversation_window
 
 COORDINATOR_PROMPT = """你是一个智能学习系统的协调者（Coordinator Agent）。
 你的职责是理解用户意图，并将任务分发给合适的专业 Agent。
@@ -37,12 +38,13 @@ async def coordinator_node(state: AgentState) -> dict:
     profile_info = state.get("user_profile", {})
     path_info = state.get("learning_path", {})
 
+    context_summary = build_context_summary(state)
     system_msg = SystemMessage(content=COORDINATOR_PROMPT.format(
         profile=profile_info or "未建立",
         path=path_info.get("title", "未设置") if path_info else "未设置",
-    ))
+    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
-    recent_messages = state["messages"][-3:]
+    recent_messages = get_conversation_window(state["messages"], max_recent=3, max_total=6)
     response = await llm.ainvoke([system_msg] + list(recent_messages))
     content = response.content.strip().lower()
 

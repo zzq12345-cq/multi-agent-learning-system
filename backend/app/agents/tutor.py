@@ -3,6 +3,7 @@
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
+from app.services.memory import build_context_summary, get_conversation_window
 
 TUTOR_PROMPT = """你是一个耐心且专业的 Python 学习导师（Tutor Agent）。
 你的职责是回答学生的问题、解释概念、引导思考。
@@ -41,12 +42,13 @@ async def tutor_node(state: AgentState) -> dict:
     if learning_path:
         context_parts.append(f"学习路径: {learning_path.get('title', '未知')}")
 
+    context_summary = build_context_summary(state)
     system_msg = SystemMessage(content=TUTOR_PROMPT.format(
         profile=_format_profile(profile),
         context=" | ".join(context_parts) if context_parts else "自由问答模式",
-    ))
+    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
-    recent_messages = state["messages"][-8:]
+    recent_messages = get_conversation_window(state["messages"], max_recent=8, max_total=15)
     response = await llm.ainvoke([system_msg] + list(recent_messages))
 
     return {

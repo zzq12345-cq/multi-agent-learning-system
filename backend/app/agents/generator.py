@@ -4,6 +4,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import start_node
+from app.services.memory import build_context_summary, get_conversation_window
 
 GENERATOR_PROMPT = """你是一个学习资源生成专家（Generator Agent）。
 你的职责是根据知识点和学生画像，生成高质量的个性化学习资源。
@@ -43,13 +44,14 @@ async def generator_node(state: AgentState) -> dict:
         nodes = learning_path.get("nodes", [])
         context = f"学习路径：{learning_path.get('title', '')}, 共 {len(nodes)} 个节点"
 
+    context_summary = build_context_summary(state)
     system_msg = SystemMessage(content=GENERATOR_PROMPT.format(
         profile=_format_profile(profile),
         node=current_node.get("name", "用户指定的内容") if current_node else "用户指定的内容",
         context=context or "无特定上下文",
-    ))
+    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
-    recent_messages = state["messages"][-5:]
+    recent_messages = get_conversation_window(state["messages"])
     response = await llm.ainvoke([system_msg] + list(recent_messages))
 
     # 更新节点状态为学习中

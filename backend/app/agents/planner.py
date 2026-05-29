@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import init_node_states
+from app.services.memory import build_context_summary, get_conversation_window
 
 PLANNER_PROMPT = """你是一个学习路径规划专家（Planner Agent）。
 你的职责是根据学生画像和学习目标，设计个性化的学习路径。
@@ -58,12 +59,13 @@ async def planner_node(state: AgentState) -> dict:
     profile = state.get("user_profile", {})
     current_path = state.get("learning_path", {})
 
+    context_summary = build_context_summary(state)
     system_msg = SystemMessage(content=PLANNER_PROMPT.format(
         profile=json.dumps(profile, ensure_ascii=False) if profile else "未建立",
         current_path=current_path.get("title", "无") if current_path else "无",
-    ))
+    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
-    recent_messages = state["messages"][-5:]
+    recent_messages = get_conversation_window(state["messages"])
     response = await llm.ainvoke([system_msg] + list(recent_messages))
     content = response.content
 

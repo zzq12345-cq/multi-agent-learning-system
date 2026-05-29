@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import complete_node
+from app.services.memory import build_context_summary, get_conversation_window
 
 ASSESSOR_PROMPT = """你是一个学习评估专家（Assessor Agent）。
 你的职责是评估学生的学习效果，生成测试题，并给出反馈。
@@ -57,12 +58,13 @@ async def assessor_node(state: AgentState) -> dict:
     profile = state.get("user_profile", {})
     current_node = state.get("current_node", {})
 
+    context_summary = build_context_summary(state)
     system_msg = SystemMessage(content=ASSESSOR_PROMPT.format(
         profile=_format_profile(profile),
         node=current_node.get("name", "综合") if current_node else "综合",
-    ))
+    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
-    recent_messages = state["messages"][-6:]
+    recent_messages = get_conversation_window(state["messages"])
     response = await llm.ainvoke([system_msg] + list(recent_messages))
     content = response.content
 

@@ -3,6 +3,7 @@
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
+from app.services.memory import build_context_summary, get_conversation_window
 
 PROFILER_PROMPT = """你是一个学习能力评估专家（Profiler Agent）。
 你的职责是通过对话了解学生的：
@@ -35,9 +36,10 @@ async def profiler_node(state: AgentState) -> dict:
     llm = get_llm(config, temperature=0.7)
 
     profile = state.get("user_profile", {})
-    system_msg = SystemMessage(content=PROFILER_PROMPT.format(profile=profile or "暂无"))
+    context_summary = build_context_summary(state)
+    system_msg = SystemMessage(content=PROFILER_PROMPT.format(profile=profile or "暂无") + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
-    recent_messages = state["messages"][-5:]
+    recent_messages = get_conversation_window(state["messages"])
     response = await llm.ainvoke([system_msg] + list(recent_messages))
     content = response.content
 
