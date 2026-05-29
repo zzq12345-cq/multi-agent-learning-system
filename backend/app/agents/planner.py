@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import init_node_states
+from app.services.mastery import init_mastery_data
 from app.services.memory import build_context_summary, get_conversation_window
 
 PLANNER_PROMPT = """你是一个学习路径规划专家（Planner Agent）。
@@ -78,6 +79,7 @@ async def planner_node(state: AgentState) -> dict:
             "messages": [AIMessage(content=summary, name="planner")],
             "learning_path": learning_path,
             "node_states": node_states,
+            "mastery_data": init_mastery_data(learning_path),
             "next_agent": END,
             "agent_outputs": {
                 **state.get("agent_outputs", {}),

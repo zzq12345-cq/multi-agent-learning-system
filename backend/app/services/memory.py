@@ -45,6 +45,20 @@ def build_context_summary(state: dict) -> str:
     if current_node and current_node.get("name"):
         parts.append(f"【当前节点】{current_node['name']}")
 
+    # 知识掌握度
+    mastery_data = state.get("mastery_data", {})
+    if mastery_data:
+        weak_nodes = [k for k, v in mastery_data.items() if v.get("mastery", 0) < 70 and v.get("mastery", 0) > 0]
+        strong_nodes = [k for k, v in mastery_data.items() if v.get("mastery", 0) >= 70]
+        if strong_nodes:
+            nodes_map = {n["id"]: n["name"] for n in learning_path.get("nodes", [])} if learning_path else {}
+            strong_names = [nodes_map.get(nid, nid) for nid in strong_nodes[:5]]
+            parts.append(f"【已掌握】{', '.join(strong_names)}")
+        if weak_nodes:
+            nodes_map = {n["id"]: n["name"] for n in learning_path.get("nodes", [])} if learning_path else {}
+            weak_names = [nodes_map.get(nid, nid) for nid in weak_nodes[:5]]
+            parts.append(f"【需加强】{', '.join(weak_names)}")
+
     # 上次评估
     metadata = state.get("metadata", {})
     last_assessment = metadata.get("last_assessment", {})

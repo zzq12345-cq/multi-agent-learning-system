@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import complete_node
+from app.services.mastery import record_assessment
 from app.services.memory import build_context_summary, get_conversation_window
 
 ASSESSOR_PROMPT = """你是一个学习评估专家（Assessor Agent）。
@@ -81,15 +82,18 @@ async def assessor_node(state: AgentState) -> dict:
     node_states = state.get("node_states", {})
     current = state.get("current_node", {})
     learning_path = state.get("learning_path", {})
+    mastery_data = state.get("mastery_data", {})
 
     if result and "score" in result and current and current.get("id"):
         score = result.get("score", 0)
+        mastery_data = record_assessment(mastery_data, current["id"], score)
         if score >= 60:  # 60 分及格，标记完成
             node_states = complete_node(current["id"], score, learning_path, node_states)
 
     return {
         "messages": [AIMessage(content=formatted, name="assessor")],
         "node_states": node_states,
+        "mastery_data": mastery_data,
         "next_agent": END,
         "agent_outputs": {
             **state.get("agent_outputs", {}),

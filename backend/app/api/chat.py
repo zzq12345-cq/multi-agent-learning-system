@@ -171,6 +171,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                 "learning_path": final_state.get("learning_path"),
                 "user_profile": final_state.get("user_profile"),
                 "node_states": final_state.get("node_states"),
+                "mastery_data": final_state.get("mastery_data"),
                 "timestamp": _now(),
             })
 
@@ -225,6 +226,7 @@ def _create_initial_state(session_id: str) -> dict:
         "learning_path": {},
         "current_node": {},
         "node_states": {},
+        "mastery_data": {},
         "agent_outputs": {},
         "next_agent": "",
         "metadata": {},

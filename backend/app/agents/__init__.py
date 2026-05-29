@@ -29,6 +29,7 @@ class AgentState(TypedDict):
     learning_path: dict
     current_node: dict
     node_states: dict  # 节点状态 {node_id: {status, score}}
+    mastery_data: dict  # 知识点掌握度 {node_id: {mastery, attempts, last_review_ts, history}}
     agent_outputs: dict
     next_agent: str
     metadata: dict
