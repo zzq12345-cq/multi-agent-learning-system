@@ -144,6 +144,69 @@ data/
 └── social/              # 社交数据（已有）
 ```
 
+## Review 修复项
+
+### Critical 1: RAG 单例与按学科过滤冲突
+
+解决方案：RAG 改为**全量加载 + 查询时过滤**模式。
+
+- `SimpleRAG` 加载时扫描所有目录（预置 + 用户上传），每个 chunk 携带 `domain` 元数据
+- `search(query, domain=None)` 时，如果指定 domain 则只在该 domain 的 chunks 中检索；否则全局检索
+- 新文档上传后，调用 `rag.reload()` 重新加载（清除缓存重建索引）
+- 不使用 per-domain 实例，保持单例但 domain-aware
+
+### Critical 2: search_knowledge 签名变更与调用方适配
+
+解决方案：
+- `search_knowledge(query, top_k=3, domain=None)` — domain 默认 None 保持向后兼容
+- Agent 中获取 domain 的方式：`state.get("learning_path", {}).get("domain", None)`
+- 在 generator_node 和 tutor_node 中，从 state 提取 domain 传给 search_knowledge
+
+### Important 3: data 目录路径统一
+
+解决方案：在 `backend/app/config.py` 中定义统一的数据根目录：
+```python
+DATA_DIR = Path(__file__).parent.parent / "data"
+```
+所有服务（graph_store、doc_parser、session_store、social）统一使用 `DATA_DIR` 而非各自硬编码路径。
+
+### Important 4: domain 名称校验
+
+解决方案：domain 必须匹配 `^[a-z0-9_-]{2,30}$`（小写字母+数字+下划线+连字符，2-30 字符）。
+- `graph_store.save_graph` 中校验
+- `subjects.py` API 中校验
+- Planner 生成的 domain 如果不合法，自动 slugify（中文转拼音或取前几个字符哈希）
+
+### Important 5: 预置图谱与动态图谱合并策略
+
+解决方案：
+- 保留 `GRAPHS` dict 作为预置数据源
+- `graph_store.list_all_graphs()` 合并两者，返回时标记 `source: "preset" | "dynamic"`
+- `GET /api/learning/graphs/{domain}` 先查动态，未找到再查预置
+- 预置图谱不可被动态覆盖（如果 domain 冲突，动态图谱使用 `{domain}_custom` 后缀）
+
+### Important 6: subjects router 注册
+
+在 `main.py` 中增加：
+```python
+from app.api.subjects import router as subjects_router
+app.include_router(subjects_router)
+```
+
+### Minor: AgentState 增加 domain 便捷访问
+
+不增加新字段，而是在 memory.py 的 `build_context_summary` 中提取 domain 并注入上下文。Agent 通过 `state["learning_path"].get("domain")` 获取。
+
+### Minor: rightPanel 类型扩展
+
+`rightPanel: 'graph' | 'progress' | 'docs'`
+
+### Minor: domain fallback 逻辑
+
+如果 LLM 未生成 domain 字段：
+1. 从 title 中提取关键词做 slugify（如"高等数学" → "gaodeng-shuxue" 或 "math"）
+2. 如果仍无法生成合法 domain，使用 `custom_{timestamp}` 避免冲突
+
 ## 不做的事
 
 - 不做文档在线预览/编辑
