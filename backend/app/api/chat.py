@@ -140,55 +140,66 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             result = None
             current_agent = "coordinator"
 
-            async for event in agent_graph.astream_events(state, version="v2"):
-                kind = event.get("event", "")
-                name = event.get("name", "")
+            try:
+                async with asyncio.timeout(AGENT_TIMEOUT_SECONDS):
+                    async for event in agent_graph.astream_events(state, version="v2"):
+                        kind = event.get("event", "")
+                        name = event.get("name", "")
 
-                # Agent 节点开始
-                if kind == "on_chain_start" and name in (
-                    "profiler", "planner", "generator", "tutor", "assessor"
-                ):
-                    await websocket.send_json({
-                        "type": "agent_end", "agent": current_agent, "timestamp": _now(),
-                    })
-                    # 生成路由理由
-                    route_reasons = {
-                        "profiler": "检测到需要评估学习水平",
-                        "planner": "准备规划个性化学习路径",
-                        "generator": "开始生成定制学习资源",
-                        "tutor": "进入答疑解惑模式",
-                        "assessor": "启动学习效果评估",
-                    }
-                    await websocket.send_json({
-                        "type": "route",
-                        "route_from": current_agent,
-                        "route_to": name,
-                        "reasoning": route_reasons.get(name, ""),
-                        "timestamp": _now(),
-                    })
-                    current_agent = name
-                    await websocket.send_json({
-                        "type": "agent_start", "agent": name, "timestamp": _now(),
-                    })
-                    logger.info(f"[{session_id}] Agent 路由: {current_agent} → {name}")
+                        # Agent 节点开始
+                        if kind == "on_chain_start" and name in (
+                            "profiler", "planner", "generator", "tutor", "assessor"
+                        ):
+                            await websocket.send_json({
+                                "type": "agent_end", "agent": current_agent, "timestamp": _now(),
+                            })
+                            # 生成路由理由
+                            route_reasons = {
+                                "profiler": "检测到需要评估学习水平",
+                                "planner": "准备规划个性化学习路径",
+                                "generator": "开始生成定制学习资源",
+                                "tutor": "进入答疑解惑模式",
+                                "assessor": "启动学习效果评估",
+                            }
+                            await websocket.send_json({
+                                "type": "route",
+                                "route_from": current_agent,
+                                "route_to": name,
+                                "reasoning": route_reasons.get(name, ""),
+                                "timestamp": _now(),
+                            })
+                            current_agent = name
+                            await websocket.send_json({
+                                "type": "agent_start", "agent": name, "timestamp": _now(),
+                            })
+                            logger.info(f"[{session_id}] Agent 路由: {current_agent} → {name}")
 
-                # 流式 token（只推送适合直接展示的 Agent 输出）
-                # coordinator 输出是路由决策，planner/assessor 输出是 JSON 需要后处理
-                if kind == "on_chat_model_stream" and current_agent in (
-                    "tutor", "generator", "profiler"
-                ):
-                    chunk = event.get("data", {}).get("chunk")
-                    if chunk and hasattr(chunk, "content") and chunk.content:
-                        await websocket.send_json({
-                            "type": "token",
-                            "agent": current_agent,
-                            "content": chunk.content,
-                            "timestamp": _now(),
-                        })
+                        # 流式 token（只推送适合直接展示的 Agent 输出）
+                        # coordinator 输出是路由决策，planner/assessor 输出是 JSON 需要后处理
+                        if kind == "on_chat_model_stream" and current_agent in (
+                            "tutor", "generator", "profiler"
+                        ):
+                            chunk = event.get("data", {}).get("chunk")
+                            if chunk and hasattr(chunk, "content") and chunk.content:
+                                await websocket.send_json({
+                                    "type": "token",
+                                    "agent": current_agent,
+                                    "content": chunk.content,
+                                    "timestamp": _now(),
+                                })
 
-                # 图执行结束
-                if kind == "on_chain_end" and name == "LangGraph":
-                    result = event.get("data", {}).get("output", {})
+                        # 图执行结束
+                        if kind == "on_chain_end" and name == "LangGraph":
+                            result = event.get("data", {}).get("output", {})
+
+            except asyncio.TimeoutError:
+                logger.warning(f"[{session_id}] Agent 执行超时（{AGENT_TIMEOUT_SECONDS}s）")
+                await websocket.send_json({
+                    "type": "error",
+                    "error": "处理超时，请重试或简化问题",
+                    "timestamp": _now(),
+                })
+                continue
 
             await websocket.send_json({
                 "type": "agent_end", "agent": current_agent, "timestamp": _now(),

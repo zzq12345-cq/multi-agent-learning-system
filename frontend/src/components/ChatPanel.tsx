@@ -4,7 +4,7 @@ import AgentWebSocket from '../services/websocket'
 import MessageBubble from './MessageBubble'
 import { AGENTS } from '../types'
 import type { WSEvent } from '../types'
-import { Send, Sparkles, Terminal, HelpCircle, Brain } from 'lucide-react'
+import { Send, Sparkles, Terminal, HelpCircle, Brain, Square } from 'lucide-react'
 
 // Agent 协作进度内联组件
 function AgentProgressInline() {
@@ -324,13 +324,28 @@ export default function ChatPanel() {
             rows={1}
             className="flex-1 bg-transparent px-3 py-1.5 resize-none outline-none text-zinc-800 placeholder-zinc-400 text-xs leading-relaxed max-h-[120px] overflow-y-auto"
           />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white flex items-center justify-center transition-all disabled:opacity-20 active:scale-95 flex-shrink-0"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </button>
+          {isLoading ? (
+            <button
+              onClick={() => {
+                wsRef.current?.cancel()
+                setLoading(false)
+                setActiveAgent(null)
+                clearStreamingContent()
+              }}
+              className="w-7 h-7 rounded-lg bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
+              title="取消"
+            >
+              <Square className="w-3 h-3 fill-white" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!input.trim()}
+              className="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white flex items-center justify-center transition-all disabled:opacity-20 active:scale-95 flex-shrink-0"
+            >
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
         <div className="text-center mt-1.5">
           <span className="text-[8px] text-zinc-300">Enter 发送 · Shift+Enter 换行</span>

@@ -48,6 +48,12 @@ class AgentWebSocket {
     this.ws.send(JSON.stringify({ message }))
   }
 
+  cancel() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'cancel' }))
+    }
+  }
+
   onEvent(handler: EventHandler) {
     this.handlers.push(handler)
     return () => { this.handlers = this.handlers.filter((h) => h !== handler) }
