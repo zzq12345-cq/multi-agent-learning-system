@@ -108,3 +108,39 @@ def get_user_by_id(user_id: str) -> dict | None:
     if user:
         return {"user_id": user_id, "username": user["username"]}
     return None
+
+
+def update_avatar(user_id: str, avatar_path: str):
+    """更新用户头像路径"""
+    users = _load_users()
+    if user_id in users:
+        users[user_id]["avatar"] = avatar_path
+        _save_users(users)
+        return True
+    return False
+
+
+def change_password(user_id: str, old_password: str, new_password: str) -> bool:
+    """修改密码"""
+    users = _load_users()
+    if user_id not in users:
+        return False
+    if not verify_password(old_password, users[user_id]["password_hash"]):
+        return False
+    users[user_id]["password_hash"] = hash_password(new_password)
+    _save_users(users)
+    return True
+
+
+def get_user_detail(user_id: str) -> dict | None:
+    """获取用户详细信息"""
+    users = _load_users()
+    user = users.get(user_id)
+    if not user:
+        return None
+    return {
+        "user_id": user_id,
+        "username": user["username"],
+        "avatar": user.get("avatar", ""),
+        "created_at": user.get("created_at", ""),
+    }

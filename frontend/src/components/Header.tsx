@@ -44,6 +44,16 @@ export default function Header() {
           >
             社区
           </button>
+          <button
+            onClick={() => navigate('/profile')}
+            className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all border ${
+              location.pathname === '/profile'
+                ? 'bg-blue-50 text-blue-600 border-blue-300'
+                : 'text-gray-500 border-transparent hover:bg-gray-100'
+            }`}
+          >
+            我的
+          </button>
         </nav>
       </div>
 

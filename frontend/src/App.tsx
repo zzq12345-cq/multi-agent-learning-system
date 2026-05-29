@@ -3,6 +3,7 @@ import { useAppStore } from './stores/useAppStore'
 import HomePage from './pages/HomePage'
 import LearningPage from './pages/LearningPage'
 import SocialPage from './pages/SocialPage'
+import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
 import PageTransition from './components/PageTransition'
 
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute><PageTransition><HomePage /></PageTransition></ProtectedRoute>} />
         <Route path="/learn" element={<ProtectedRoute><PageTransition><LearningPage /></PageTransition></ProtectedRoute>} />
         <Route path="/social" element={<ProtectedRoute><PageTransition><SocialPage /></PageTransition></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><PageTransition><ProfilePage /></PageTransition></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )
