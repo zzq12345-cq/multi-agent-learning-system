@@ -48,7 +48,7 @@ export default function SubjectSelector() {
   if (!subjects.length) return null
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-200/50 bg-white/50 overflow-x-auto">
+    <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-200/50 bg-white/50 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
       <span className="text-[9px] text-zinc-400 font-medium mr-1 flex-shrink-0">学科</span>
       {subjects.map((s) => {
         const Icon = DOMAIN_ICONS[s.domain] || Sparkles
@@ -57,7 +57,7 @@ export default function SubjectSelector() {
           <button
             key={s.domain}
             onClick={() => handleSelect(s.domain)}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium transition-all flex-shrink-0 ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium transition-all flex-shrink-0 whitespace-nowrap ${
               isActive
                 ? 'bg-zinc-900 text-white shadow-sm'
                 : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700'
@@ -65,7 +65,7 @@ export default function SubjectSelector() {
             title={s.source === 'dynamic' ? '动态生成的学科' : '预置学科'}
           >
             <Icon className="w-3 h-3" />
-            {s.title.length > 6 ? s.title.slice(0, 6) + '...' : s.title}
+            {s.title.length > 8 ? s.title.slice(0, 8) + '…' : s.title}
             {s.source === 'dynamic' && <span className="text-[7px] opacity-60">✨</span>}
           </button>
         )
