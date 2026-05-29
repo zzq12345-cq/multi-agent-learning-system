@@ -102,8 +102,22 @@ export default function ChatPanel() {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail
-      if (detail?.message && wsRef.current?.connected) {
-        wsRef.current.send(detail.message)
+      if (detail?.message) {
+        // 将答案作为用户消息添加到聊天记录
+        const store = useAppStore.getState()
+        store.addMessage({
+          id: crypto.randomUUID(),
+          role: 'user',
+          content: detail.message,
+          timestamp: Date.now(),
+        })
+        store.setLoading(true)
+        store.clearTraces()
+        store.clearStreamingContent()
+
+        if (wsRef.current?.connected) {
+          wsRef.current.send(detail.message)
+        }
       }
     }
     window.addEventListener('graph-send-message', handler)

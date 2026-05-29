@@ -3,6 +3,43 @@ import remarkGfm from 'remark-gfm'
 import type { ChatMessage } from '../types'
 import { AGENTS } from '../types'
 import { Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck, User } from 'lucide-react'
+import QuizCard from './QuizCard'
+
+interface QuizQuestion {
+  id: string
+  question: string
+  options: string[]
+}
+
+function parseQuizFromContent(content: string): QuizQuestion[] | null {
+  // 检测是否包含测试题格式
+  if (!content.includes('学习检测') && !content.includes('第 1 题') && !content.includes('第1题')) return null
+
+  const questions: QuizQuestion[] = []
+  // 匹配 "第 N 题" 模式
+  const qBlocks = content.split(/\*\*第\s*\d+\s*题\*\*/)
+
+  for (let i = 1; i < qBlocks.length; i++) {
+    const block = qBlocks[i]
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean)
+
+    // 第一行是题目（可能包含类型标注如 (选择)）
+    let question = lines[0]?.replace(/^\(.*?\)\s*/, '') || ''
+
+    // 找选项（A. B. C. D. 开头的行）
+    const options = lines.filter(l => /^[A-D][.．、]/.test(l))
+
+    if (question && options.length >= 2) {
+      questions.push({
+        id: `q${i}`,
+        question,
+        options,
+      })
+    }
+  }
+
+  return questions.length > 0 ? questions : null
+}
 
 interface Props {
   message: ChatMessage
@@ -65,13 +102,29 @@ export default function MessageBubble({ message }: Props) {
         >
           {isUser ? (
             <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-          ) : (
-            <div className="markdown-content leading-relaxed">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {message.content}
-              </ReactMarkdown>
-            </div>
-          )}
+          ) : (() => {
+            const quiz = parseQuizFromContent(message.content)
+            if (quiz) {
+              return (
+                <QuizCard
+                  questions={quiz}
+                  onSubmit={(answers) => {
+                    const answerText = quiz.map((q, i) =>
+                      `第${i + 1}题我选 ${answers[q.id] || '?'}`
+                    ).join('，')
+                    window.dispatchEvent(new CustomEvent('graph-send-message', { detail: { message: answerText } }))
+                  }}
+                />
+              )
+            }
+            return (
+              <div className="markdown-content leading-relaxed">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>
