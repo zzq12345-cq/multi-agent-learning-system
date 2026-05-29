@@ -45,6 +45,27 @@ export default function ProgressDashboard() {
       })
   }, [masteryData, learningPath])
 
+  // 计算雷达图数据（按难度分组统计掌握度）
+  const radarData = useMemo(() => {
+    if (!learningPath?.nodes) return []
+
+    const dimensions: Record<string, { total: number; completed: number }> = {}
+
+    learningPath.nodes.forEach((node) => {
+      const dimLabel = node.difficulty <= 1 ? '基础' : node.difficulty <= 2 ? '进阶' : node.difficulty <= 3 ? '中级' : '高级'
+      if (!dimensions[dimLabel]) dimensions[dimLabel] = { total: 0, completed: 0 }
+      dimensions[dimLabel].total++
+
+      const state = nodeStates.find(s => s.nodeId === node.id)
+      if (state?.status === 'completed') dimensions[dimLabel].completed++
+    })
+
+    return Object.entries(dimensions).map(([label, { total, completed }]) => ({
+      label,
+      value: total > 0 ? Math.round((completed / total) * 100) : 0,
+    }))
+  }, [learningPath, nodeStates])
+
   return (
     <div className="h-full flex flex-col bg-[#f7f7f5] overflow-y-auto">
       {/* 头部统计 */}
@@ -81,6 +102,19 @@ export default function ProgressDashboard() {
           />
         </div>
       </div>
+
+      {/* 能力雷达图 */}
+      {learningPath?.nodes && learningPath.nodes.length > 0 && radarData.length > 0 && (
+        <div className="px-4 pt-4">
+          <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+            能力分布
+          </div>
+          <div className="flex justify-center bg-white rounded-xl border border-zinc-200/60 p-3">
+            <RadarChart data={radarData} />
+          </div>
+        </div>
+      )}
+
       {/* 进度条 */}
       {totalNodes > 0 && (
         <div className="px-4 pt-4">
@@ -196,6 +230,70 @@ function StatCard({ icon: Icon, label, value, sub }: {
       </div>
       <div className="text-sm font-bold text-zinc-900">{value}</div>
       <div className="text-[8px] text-zinc-400 mt-0.5">{sub}</div>
+    </div>
+  )
+}
+
+function RadarChart({ data }: { data: { label: string; value: number }[] }) {
+  if (!data.length) return null
+
+  const size = 160
+  const center = size / 2
+  const radius = 55
+  const angleStep = (2 * Math.PI) / data.length
+
+  const getPoint = (index: number, value: number) => {
+    const angle = angleStep * index - Math.PI / 2
+    const r = (value / 100) * radius
+    return { x: center + r * Math.cos(angle), y: center + r * Math.sin(angle) }
+  }
+
+  const gridLevels = [25, 50, 75, 100]
+
+  const dataPoints = data.map((d, i) => getPoint(i, d.value))
+  const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={size} height={size} className="overflow-visible">
+        {/* 背景网格 */}
+        {gridLevels.map((level) => {
+          const points = data.map((_, i) => getPoint(i, level))
+          const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
+          return <path key={level} d={path} fill="none" stroke="#e4e4e7" strokeWidth="0.5" />
+        })}
+
+        {/* 轴线 */}
+        {data.map((_, i) => {
+          const p = getPoint(i, 100)
+          return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="#e4e4e7" strokeWidth="0.5" />
+        })}
+
+        {/* 数据区域 */}
+        <path d={dataPath} fill="rgba(99, 102, 241, 0.15)" stroke="#6366f1" strokeWidth="1.5" />
+
+        {/* 数据点 */}
+        {dataPoints.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#6366f1" />
+        ))}
+
+        {/* 标签 */}
+        {data.map((d, i) => {
+          const labelPoint = getPoint(i, 120)
+          return (
+            <text
+              key={i}
+              x={labelPoint.x}
+              y={labelPoint.y}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="text-[8px] fill-zinc-500"
+            >
+              {d.label}
+            </text>
+          )
+        })}
+      </svg>
     </div>
   )
 }
