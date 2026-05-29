@@ -6,7 +6,8 @@ from app.services.rag import SimpleRAG, search_knowledge, _tokenize, _compute_tf
 def test_tokenize_chinese():
     tokens = _tokenize("Python变量赋值")
     assert "python" in tokens
-    assert "变" in tokens
+    assert "变量" in tokens
+    assert "赋值" in tokens
 
 
 def test_tokenize_english():
