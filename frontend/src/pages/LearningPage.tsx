@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 import AgentPanel from '../components/AgentPanel'
 import ChatPanel from '../components/ChatPanel'
@@ -7,12 +7,44 @@ import ProgressDashboard from '../components/ProgressDashboard'
 import SubjectSelector from '../components/SubjectSelector'
 import DocUpload from '../components/DocUpload'
 import { useAppStore } from '../stores/useAppStore'
-import { Map, BarChart3, FileText, PanelLeft, PanelRight, X } from 'lucide-react'
+import { Map, BarChart3, FileText, PanelLeft, PanelRight, ChevronsRight, ChevronsLeft, X } from 'lucide-react'
 
 export default function LearningPage() {
   const { rightPanel, setRightPanel } = useAppStore()
   const [showLeftPanel, setShowLeftPanel] = useState(false)
   const [showRightPanel, setShowRightPanel] = useState(false)
+
+  // 左侧面板拖拽宽度
+  const [leftWidth, setLeftWidth] = useState(224)
+  const [isDragging, setIsDragging] = useState(false)
+
+  // 右侧面板折叠
+  const [rightCollapsed, setRightCollapsed] = useState(false)
+
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.min(400, Math.max(200, e.clientX))
+      setLeftWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [isDragging])
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-white">
@@ -20,8 +52,19 @@ export default function LearningPage() {
 
       <div className="flex-1 flex overflow-hidden relative">
         {/* 左侧：Agent 面板 — 桌面端常驻，移动端 overlay */}
-        <div className="hidden lg:block w-56 flex-shrink-0">
+        <div className="hidden lg:block flex-shrink-0" style={{ width: leftWidth }}>
           <AgentPanel />
+        </div>
+
+        {/* 拖拽手柄 */}
+        <div
+          className="hidden lg:flex w-1 flex-shrink-0 cursor-col-resize items-center justify-center hover:bg-blue-100 active:bg-blue-200 transition-colors group"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            setIsDragging(true)
+          }}
+        >
+          <div className="w-0.5 h-8 bg-gray-300 rounded-full group-hover:bg-blue-400 transition-colors" />
         </div>
 
         {/* 移动端左侧 overlay */}
@@ -40,7 +83,15 @@ export default function LearningPage() {
         )}
 
         {/* 中间：对话 */}
-        <div className="flex-1 min-w-0 border-r border-gray-200">
+        <div className="flex-1 min-w-0 border-r border-gray-200 relative">
+          {/* 右侧面板切换按钮 */}
+          <button
+            onClick={() => setRightCollapsed(!rightCollapsed)}
+            className="hidden lg:flex absolute top-3 right-3 z-10 w-7 h-7 items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-all shadow-sm"
+            title={rightCollapsed ? '展开面板' : '收起面板'}
+          >
+            {rightCollapsed ? <ChevronsLeft className="w-3.5 h-3.5" /> : <ChevronsRight className="w-3.5 h-3.5" />}
+          </button>
           {/* 移动端顶部工具栏 */}
           <div className="lg:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white">
             <button
@@ -61,7 +112,8 @@ export default function LearningPage() {
         </div>
 
         {/* 右侧：图谱/进度 — 桌面端常驻 */}
-        <div className="hidden lg:flex w-96 flex-shrink-0 flex-col bg-white">
+        {!rightCollapsed && (
+        <div className="hidden lg:flex w-96 flex-shrink-0 flex-col bg-white border-l border-gray-100">
           <SubjectSelector />
           <div className="flex border-b border-gray-200 bg-white">
             <button
@@ -96,6 +148,7 @@ export default function LearningPage() {
             {rightPanel === 'graph' ? <KnowledgeGraph /> : rightPanel === 'progress' ? <ProgressDashboard /> : <DocUpload />}
           </div>
         </div>
+        )}
 
         {/* 移动端右侧 overlay */}
         {showRightPanel && (
