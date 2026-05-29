@@ -5,10 +5,18 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    volumes:
-      - backend-data:/app/data
     environment:
-      - DEBUG=false
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-me-in-production}
+    volumes:
+      - backend_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   frontend:
@@ -16,8 +24,9 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  backend-data:
+  backend_data:
