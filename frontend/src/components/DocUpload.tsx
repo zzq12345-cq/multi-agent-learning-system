@@ -4,13 +4,13 @@ import { uploadDoc, getDomainDocs, deleteDomainDoc } from '../services/api'
 import { Upload, FileText, Trash2 } from 'lucide-react'
 
 export default function DocUpload() {
-  const { learningPath } = useAppStore()
+  const { learningPath, activeDomain } = useAppStore()
   const [docs, setDocs] = useState<{ filename: string; size: number }[]>([])
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const domain = learningPath?.domain || ''
+  const domain = activeDomain || learningPath?.domain || ''
 
   useEffect(() => {
     if (domain) {

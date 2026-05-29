@@ -47,6 +47,9 @@ interface AppState {
   rightPanel: 'graph' | 'progress' | 'docs'
   setRightPanel: (panel: 'graph' | 'progress' | 'docs') => void
 
+  activeDomain: string
+  setActiveDomain: (domain: string) => void
+
   masteryData: Record<string, { mastery: number; last_review_ts: number; attempts: number }>
   setMasteryData: (data: Record<string, { mastery: number; last_review_ts: number; attempts: number }>) => void
 
@@ -137,6 +140,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   rightPanel: 'graph',
   setRightPanel: (panel) => set({ rightPanel: panel }),
+
+  activeDomain: 'python',
+  setActiveDomain: (domain) => set({ activeDomain: domain }),
 
   masteryData: {},
   setMasteryData: (data) => set({ masteryData: data }),

@@ -19,8 +19,7 @@ interface SubjectInfo {
 
 export default function SubjectSelector() {
   const [subjects, setSubjects] = useState<SubjectInfo[]>([])
-  const [activeDomain, setActiveDomain] = useState<string>('')
-  const { setLearningPath, setNodeStates } = useAppStore()
+  const { setLearningPath, setNodeStates, activeDomain, setActiveDomain } = useAppStore()
 
   useEffect(() => {
     listSubjects().then((data) => {
