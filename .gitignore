@@ -24,3 +24,6 @@ dist/
 
 # Docker
 .docker/
+
+# Runtime data
+backend/data/
