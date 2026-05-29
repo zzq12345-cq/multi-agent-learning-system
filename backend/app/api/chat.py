@@ -257,8 +257,8 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                             f"获得徽章「{badge['name']}」{badge['icon']}",
                             {"badge_id": badge_id},
                         )
-            except Exception:
-                pass  # 社交功能不影响主流程
+            except Exception as e:
+                logger.debug(f"[{session_id}] 社交事件触发失败: {e}")
 
     except WebSocketDisconnect:
         pass

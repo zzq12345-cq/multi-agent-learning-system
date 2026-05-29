@@ -37,16 +37,21 @@ export default function ActivityFeed() {
 
   const handleLike = async (activityId: string) => {
     if (!user) return
-    await fetch(`/api/social/like/${activityId}`, {
+    const token = localStorage.getItem('auth_token') || ''
+    const res = await fetch(`/api/social/like/${activityId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.userId }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
     })
-    setActivities(prev => prev.map(a =>
-      a.id === activityId
-        ? { ...a, likes: a.likes + 1, liked_by: [...a.liked_by, user.userId] }
-        : a
-    ))
+    if (res.ok) {
+      setActivities(prev => prev.map(a =>
+        a.id === activityId
+          ? { ...a, likes: a.likes + 1, liked_by: [...a.liked_by, user.userId] }
+          : a
+      ))
+    }
   }
 
   if (loading) {

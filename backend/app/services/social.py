@@ -1,5 +1,6 @@
 """轻量社交引擎 — 动态 Feed + 排行榜 + 徽章"""
 
+import fcntl
 import json
 import time
 import uuid
@@ -14,36 +15,50 @@ def _ensure_dir():
     SOCIAL_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _load_activities() -> list[dict]:
-    if ACTIVITIES_FILE.exists():
+def _read_json_locked(filepath: Path):
+    """带文件锁的 JSON 读取"""
+    _ensure_dir()
+    if not filepath.exists():
+        return None
+    with open(filepath, 'r') as f:
+        fcntl.flock(f, fcntl.LOCK_SH)
         try:
-            return json.loads(ACTIVITIES_FILE.read_text())
+            return json.load(f)
         except json.JSONDecodeError:
-            return []
-    return []
+            return None
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
+def _write_json_locked(filepath: Path, data):
+    """带文件锁的 JSON 写入（原子）"""
+    _ensure_dir()
+    import tempfile, os
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=filepath.parent, suffix=".tmp")
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, str(filepath))
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+
+def _load_activities() -> list[dict]:
+    return _read_json_locked(ACTIVITIES_FILE) or []
 
 
 def _save_activities(activities: list[dict]):
-    _ensure_dir()
-    ACTIVITIES_FILE.write_text(
-        json.dumps(activities, ensure_ascii=False, indent=2)
-    )
+    _write_json_locked(ACTIVITIES_FILE, activities)
 
 
 def _load_badges() -> dict:
-    if BADGES_FILE.exists():
-        try:
-            return json.loads(BADGES_FILE.read_text())
-        except json.JSONDecodeError:
-            return {}
-    return {}
+    return _read_json_locked(BADGES_FILE) or {}
 
 
 def _save_badges(badges: dict):
-    _ensure_dir()
-    BADGES_FILE.write_text(
-        json.dumps(badges, ensure_ascii=False, indent=2)
-    )
+    _write_json_locked(BADGES_FILE, badges)
 
 
 # ===== 动态 Feed =====
