@@ -47,6 +47,9 @@ interface AppState {
   rightPanel: 'graph' | 'progress'
   setRightPanel: (panel: 'graph' | 'progress') => void
 
+  masteryData: Record<string, { mastery: number; last_review_ts: number; attempts: number }>
+  setMasteryData: (data: Record<string, { mastery: number; last_review_ts: number; attempts: number }>) => void
+
   wsConnected: boolean
   setWsConnected: (connected: boolean) => void
 }
@@ -134,6 +137,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   rightPanel: 'graph',
   setRightPanel: (panel) => set({ rightPanel: panel }),
+
+  masteryData: {},
+  setMasteryData: (data) => set({ masteryData: data }),
 
   wsConnected: false,
   setWsConnected: (connected) => set({ wsConnected: connected }),

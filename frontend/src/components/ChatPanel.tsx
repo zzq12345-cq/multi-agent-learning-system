@@ -161,6 +161,9 @@ export default function ChatPanel() {
           }))
           store.setNodeStates(states)
         }
+        if (event.mastery_data) {
+          store.setMasteryData(event.mastery_data)
+        }
         store.setActiveAgent(null)
         store.setLoading(false)
         store.clearStreamingContent()
