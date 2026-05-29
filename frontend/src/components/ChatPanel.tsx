@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import AgentWebSocket from '../services/websocket'
 import MessageBubble from './MessageBubble'
+import ReviewReminder from './ReviewReminder'
+import OnboardingGuide from './OnboardingGuide'
 import { AGENTS } from '../types'
 import type { WSEvent } from '../types'
 import { Send, Code, BarChart3, RefreshCw, Brain, Square, ChevronRight } from 'lucide-react'
@@ -264,6 +266,8 @@ export default function ChatPanel() {
   return (
     <div className="h-full flex flex-col bg-white relative overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <ReviewReminder />
+        {messages.length === 0 && <OnboardingGuide />}
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center max-w-sm mx-auto">
             <div className="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center mb-5">
