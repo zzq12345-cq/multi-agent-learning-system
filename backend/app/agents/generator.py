@@ -5,6 +5,7 @@ from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import start_node
 from app.services.memory import build_context_summary, get_conversation_window
+from app.services.rag import search_knowledge
 
 GENERATOR_PROMPT = """你是一个学习资源生成专家（Generator Agent）。
 你的职责是根据知识点和学生画像，生成高质量的个性化学习资源。
@@ -45,11 +46,21 @@ async def generator_node(state: AgentState) -> dict:
         context = f"学习路径：{learning_path.get('title', '')}, 共 {len(nodes)} 个节点"
 
     context_summary = build_context_summary(state)
-    system_msg = SystemMessage(content=GENERATOR_PROMPT.format(
+
+    # RAG 检索相关教学资料
+    user_query = state["messages"][-1].content if state["messages"] else ""
+    node_name = current_node.get("name", "") if current_node else ""
+    search_query = f"{node_name} {user_query}" if node_name else user_query
+    reference = search_knowledge(search_query, top_k=3)
+
+    prompt_content = GENERATOR_PROMPT.format(
         profile=_format_profile(profile),
         node=current_node.get("name", "用户指定的内容") if current_node else "用户指定的内容",
         context=context or "无特定上下文",
-    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
+    ) + f"\n\n--- 当前上下文 ---\n{context_summary}"
+    if reference:
+        prompt_content += f"\n\n{reference}\n\n请参考以上资料生成内容，确保准确性。"
+    system_msg = SystemMessage(content=prompt_content)
 
     recent_messages = get_conversation_window(state["messages"])
     response = await llm.ainvoke([system_msg] + list(recent_messages))

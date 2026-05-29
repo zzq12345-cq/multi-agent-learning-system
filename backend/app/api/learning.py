@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from app.knowledge.python_graph import PYTHON_KNOWLEDGE_GRAPH
 from app.knowledge.web_graph import WEB_KNOWLEDGE_GRAPH
 from app.knowledge.datastructure_graph import DS_KNOWLEDGE_GRAPH
+from app.services.rag import search_knowledge
 
 router = APIRouter(prefix="/api/learning", tags=["learning"])
 
@@ -52,3 +53,10 @@ async def get_profile(session_id: str):
     if not state:
         return {"session_id": session_id, "profile": None}
     return {"session_id": session_id, "profile": state.get("user_profile")}
+
+
+@router.get("/search")
+async def search_docs(q: str, top_k: int = 3):
+    """搜索教学文档"""
+    results = search_knowledge(q, top_k=top_k)
+    return {"query": q, "results": results}

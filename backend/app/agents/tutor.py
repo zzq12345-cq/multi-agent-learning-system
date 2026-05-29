@@ -4,6 +4,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.memory import build_context_summary, get_conversation_window
+from app.services.rag import search_knowledge
 
 TUTOR_PROMPT = """你是一个耐心且专业的 Python 学习导师（Tutor Agent）。
 你的职责是回答学生的问题、解释概念、引导思考。
@@ -43,10 +44,18 @@ async def tutor_node(state: AgentState) -> dict:
         context_parts.append(f"学习路径: {learning_path.get('title', '未知')}")
 
     context_summary = build_context_summary(state)
-    system_msg = SystemMessage(content=TUTOR_PROMPT.format(
+
+    # RAG 检索相关教学资料
+    user_query = state["messages"][-1].content if state["messages"] else ""
+    reference = search_knowledge(user_query, top_k=2)
+
+    prompt_content = TUTOR_PROMPT.format(
         profile=_format_profile(profile),
         context=" | ".join(context_parts) if context_parts else "自由问答模式",
-    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
+    ) + f"\n\n--- 当前上下文 ---\n{context_summary}"
+    if reference:
+        prompt_content += f"\n\n{reference}\n\n回答时可参考以上资料，但要用自己的话解释。"
+    system_msg = SystemMessage(content=prompt_content)
 
     recent_messages = get_conversation_window(state["messages"], max_recent=8, max_total=15)
     response = await llm.ainvoke([system_msg] + list(recent_messages))
