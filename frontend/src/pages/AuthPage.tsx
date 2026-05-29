@@ -43,23 +43,23 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-grid-pattern flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/30 to-white flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex p-2 bg-zinc-900 rounded-xl shadow-sm mb-4">
+          <div className="inline-flex w-12 h-12 bg-blue-500 rounded-full items-center justify-center shadow-sm mb-4">
             <Brain className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-lg font-bold text-zinc-900">智学多Agent系统</h1>
-          <p className="text-xs text-zinc-400 mt-1">个性化多智能体协同学习平台</p>
+          <h1 className="text-lg font-bold text-gray-900">智学多Agent系统</h1>
+          <p className="text-xs text-gray-400 mt-1">个性化多智能体协同学习平台</p>
         </div>
 
         {/* Tab 切换 */}
-        <div className="flex mb-6 bg-zinc-100 rounded-lg p-0.5">
+        <div className="flex mb-6 bg-gray-100 rounded-lg p-0.5">
           <button
             onClick={() => { setIsLogin(true); setError('') }}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-md transition-all ${
-              isLogin ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'
+              isLogin ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
@@ -129,27 +129,27 @@ export default function AuthPage() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
+                className="w-3.5 h-3.5 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
               />
-              <span className="text-[10px] text-zinc-500">记住我</span>
+              <span className="text-[10px] text-gray-500">记住我</span>
             </label>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium rounded-xl transition-all disabled:opacity-50 active:scale-[0.98]"
+            className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-full transition-all disabled:opacity-50 active:scale-[0.98] shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
           >
             {loading ? '处理中...' : isLogin ? '登录' : '注册'}
           </button>
         </form>
 
         {/* 底部提示 */}
-        <p className="text-center text-[10px] text-zinc-400 mt-6">
+        <p className="text-center text-[10px] text-gray-400 mt-6">
           {isLogin ? '没有账号？' : '已有账号？'}
           <button
             onClick={() => { setIsLogin(!isLogin); setError('') }}
-            className="text-zinc-700 font-medium ml-1 hover:underline"
+            className="text-blue-600 font-medium ml-1 hover:underline"
           >
             {isLogin ? '立即注册' : '去登录'}
           </button>
