@@ -3,6 +3,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+import sys
 from app.config import get_settings
 from app.api.chat import router as chat_router
 from app.api.learning import router as learning_router
@@ -15,7 +17,15 @@ async def lifespan(app: FastAPI):
     """应用生命周期"""
     import os
     os.makedirs("./data", exist_ok=True)
+
+    # 配置日志
+    logger.remove()
+    logger.add(sys.stderr, level="INFO", format="{time:HH:mm:ss} | {level:<7} | {name}:{function}:{line} | {message}")
+    logger.add("./data/app.log", rotation="10 MB", retention="7 days", level="DEBUG")
+    logger.info("应用启动")
+
     yield
+    logger.info("应用关闭")
 
 
 app = FastAPI(

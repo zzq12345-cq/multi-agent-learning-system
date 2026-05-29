@@ -4,6 +4,7 @@ import time
 import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+from loguru import logger
 from langchain_core.messages import HumanMessage
 from app.agents.graph import agent_graph
 from app.agents import AgentState
@@ -85,6 +86,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             raw = await websocket.receive_json()
             message = raw.get("message", "")
             llm_cfg = raw.get("llm_config", {})
+            logger.info(f"[{session_id}] 收到消息: {message[:50]}...")
 
             # 如果前端未提供有效 api_key，回退到后端默认配置
             if not llm_cfg.get("api_key"):
@@ -129,6 +131,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                     await websocket.send_json({
                         "type": "agent_start", "agent": name, "timestamp": _now(),
                     })
+                    logger.info(f"[{session_id}] Agent 路由: {current_agent} → {name}")
 
                 # 流式 token（只推送适合直接展示的 Agent 输出）
                 # coordinator 输出是路由决策，planner/assessor 输出是 JSON 需要后处理
@@ -174,6 +177,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
     except WebSocketDisconnect:
         pass
     except Exception as e:
+        logger.error(f"[{session_id}] WebSocket 错误: {e}")
         try:
             await websocket.send_json({
                 "type": "error", "error": str(e), "timestamp": _now(),

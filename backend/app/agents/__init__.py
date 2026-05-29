@@ -8,13 +8,15 @@ import operator
 
 
 def get_llm(config: LLMConfig, temperature: float = 0.7) -> ChatOpenAI:
-    """根据用户配置获取 LLM 实例"""
+    """根据用户配置获取 LLM 实例（含超时和重试）"""
     return ChatOpenAI(
         model=config.model,
         api_key=config.api_key,
         base_url=config.base_url,
         temperature=temperature,
         streaming=True,
+        request_timeout=60,
+        max_retries=2,
     )
 
 

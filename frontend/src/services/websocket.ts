@@ -1,6 +1,7 @@
 /** WebSocket 连接管理 — Agent 事件流 */
 
 import type { WSEvent } from '../types'
+import { useAppStore } from '../stores/useAppStore'
 
 type EventHandler = (event: WSEvent) => void
 
@@ -19,7 +20,10 @@ class AgentWebSocket {
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(this.url)
-      this.ws.onopen = () => resolve()
+      this.ws.onopen = () => {
+        useAppStore.getState().setWsConnected(true)
+        resolve()
+      }
       this.ws.onmessage = (evt) => {
         try {
           const data: WSEvent = JSON.parse(evt.data)
@@ -28,6 +32,7 @@ class AgentWebSocket {
       }
       this.ws.onerror = () => reject(new Error('WebSocket 连接失败'))
       this.ws.onclose = () => {
+        useAppStore.getState().setWsConnected(false)
         this.reconnectTimer = setTimeout(() => {
           this.connect().catch(() => {})
         }, 3000)

@@ -16,6 +16,7 @@ export default function ChatPanel() {
     setLearningPath, setProfile,
     clearTraces,
     streamingContent, clearStreamingContent,
+    wsConnected,
   } = useAppStore()
 
   useEffect(() => {
@@ -224,6 +225,13 @@ export default function ChatPanel() {
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* 断线提示 */}
+      {!wsConnected && messages.length > 0 && (
+        <div className="px-4 py-1.5 bg-amber-50 border-t border-amber-200 text-[9px] text-amber-700 text-center">
+          ⚠️ 连接已断开，正在重连... (消息将通过备用通道发送)
+        </div>
+      )}
 
       <div className="p-4 border-t border-zinc-200/50 bg-[#fcfcfb] relative z-20">
         <div className="max-w-3xl mx-auto flex gap-2.5 items-center bg-white border border-zinc-200/80 p-1.5 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.01),0_8px_30px_-10px_rgba(0,0,0,0.02)] focus-within:border-zinc-400/80 transition-all duration-200">

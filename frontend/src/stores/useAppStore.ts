@@ -48,6 +48,9 @@ interface AppState {
 
   rightPanel: 'graph' | 'progress'
   setRightPanel: (panel: 'graph' | 'progress') => void
+
+  wsConnected: boolean
+  setWsConnected: (connected: boolean) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -123,4 +126,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   rightPanel: 'graph',
   setRightPanel: (panel) => set({ rightPanel: panel }),
+
+  wsConnected: false,
+  setWsConnected: (connected) => set({ wsConnected: connected }),
 }))
