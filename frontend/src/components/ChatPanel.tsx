@@ -67,6 +67,7 @@ function AgentProgressInline() {
 export default function ChatPanel() {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const wsRef = useRef<AgentWebSocket | null>(null)
 
   const {
@@ -77,6 +78,14 @@ export default function ChatPanel() {
     streamingContent, clearStreamingContent,
     wsConnected,
   } = useAppStore()
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (el) {
+      el.style.height = 'auto'
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+    }
+  }, [input])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -307,12 +316,13 @@ export default function ChatPanel() {
       <div className="p-4 border-t border-zinc-200/50 bg-[#fcfcfb] relative z-20">
         <div className="max-w-3xl mx-auto flex gap-2.5 items-center bg-white border border-zinc-200/80 p-1.5 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.01),0_8px_30px_-10px_rgba(0,0,0,0.02)] focus-within:border-zinc-400/80 transition-all duration-200">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="与多 Agent 讨论... (Enter 发送)"
+            placeholder="与多 Agent 讨论..."
             rows={1}
-            className="flex-1 bg-transparent px-3 py-1.5 resize-none outline-none text-zinc-800 placeholder-zinc-400 text-xs leading-relaxed"
+            className="flex-1 bg-transparent px-3 py-1.5 resize-none outline-none text-zinc-800 placeholder-zinc-400 text-xs leading-relaxed max-h-[120px] overflow-y-auto"
           />
           <button
             onClick={handleSend}
@@ -321,6 +331,9 @@ export default function ChatPanel() {
           >
             <Send className="w-3.5 h-3.5" />
           </button>
+        </div>
+        <div className="text-center mt-1.5">
+          <span className="text-[8px] text-zinc-300">Enter 发送 · Shift+Enter 换行</span>
         </div>
       </div>
     </div>

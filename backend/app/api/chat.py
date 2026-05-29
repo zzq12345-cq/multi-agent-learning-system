@@ -11,6 +11,7 @@ from app.agents import AgentState
 from app.deps import LLMConfig, get_llm_config
 from app.knowledge.python_graph import PYTHON_KNOWLEDGE_GRAPH
 from app.services.session_store import save_session, load_session, delete_session_file
+from app.services.auth import decode_token
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -76,6 +77,14 @@ async def send_message(req: ChatRequest):
 @router.websocket("/ws/{session_id}")
 async def websocket_chat(websocket: WebSocket, session_id: str):
     """WebSocket 流式对话 — 推送 Agent 协作事件"""
+    # 可选认证：从 query param 获取 token
+    token = websocket.query_params.get("token", "")
+    if token:
+        user_id = decode_token(token)
+        if not user_id:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+
     await websocket.accept()
 
     if session_id not in sessions:

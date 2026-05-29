@@ -14,7 +14,8 @@ class AgentWebSocket {
   constructor(sessionId: string) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
-    this.url = `${protocol}//${host}/api/chat/ws/${sessionId}`
+    const token = localStorage.getItem('auth_token') || ''
+    this.url = `${protocol}//${host}/api/chat/ws/${sessionId}${token ? `?token=${token}` : ''}`
   }
 
   connect(): Promise<void> {
