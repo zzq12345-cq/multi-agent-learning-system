@@ -78,6 +78,7 @@ export type WSEventType =
   | 'route'
   | 'done'
   | 'error'
+  | 'system_notice'
 
 export interface WSEvent {
   type: WSEventType

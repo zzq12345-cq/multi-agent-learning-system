@@ -84,7 +84,7 @@ async def coordinator_node(state: AgentState) -> dict:
                 "next_agent": agent_id,
                 "agent_outputs": {
                     **state.get("agent_outputs", {}),
-                    "coordinator": f"路由到 {name}",
+                    "coordinator": f"意图识别：{content.strip()[:80]}",
                 },
             }
 

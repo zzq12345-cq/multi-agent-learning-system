@@ -191,6 +191,16 @@ export default function ChatPanel() {
         break
       }
 
+      case 'system_notice':
+        store.addMessage({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: event.content || '',
+          agentName: 'system',
+          timestamp: Date.now(),
+        })
+        break
+
       case 'error':
         store.addMessage({
           id: crypto.randomUUID(),

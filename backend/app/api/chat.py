@@ -132,6 +132,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             state["llm_config"] = llm_cfg
             state["event_log"] = []
             state["_prev_node_states"] = dict(state.get("node_states", {}))
+            state["_prev_learning_path"] = dict(state.get("learning_path", {})) if state.get("learning_path") else {}
 
             # 协调者开始
             await websocket.send_json({
@@ -154,7 +155,8 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                             await websocket.send_json({
                                 "type": "agent_end", "agent": current_agent, "timestamp": _now(),
                             })
-                            # 生成路由理由
+                            # 从 coordinator 输出中获取路由理由
+                            coordinator_output = state.get("agent_outputs", {}).get("coordinator", "")
                             route_reasons = {
                                 "profiler": "检测到需要评估学习水平",
                                 "planner": "准备规划个性化学习路径",
@@ -162,11 +164,12 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                                 "tutor": "进入答疑解惑模式",
                                 "assessor": "启动学习效果评估",
                             }
+                            reasoning = coordinator_output if coordinator_output and "意图识别" in coordinator_output else route_reasons.get(name, "")
                             await websocket.send_json({
                                 "type": "route",
                                 "route_from": current_agent,
                                 "route_to": name,
-                                "reasoning": route_reasons.get(name, ""),
+                                "reasoning": reasoning,
                                 "timestamp": _now(),
                             })
                             current_agent = name
@@ -225,6 +228,25 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                 "mastery_data": final_state.get("mastery_data"),
                 "timestamp": _now(),
             })
+
+            # 检测路径调整并通知前端
+            try:
+                old_path = state.get("_prev_learning_path", {})
+                new_path = final_state.get("learning_path", {})
+                if old_path and new_path and old_path != new_path:
+                    old_nodes = set(n.get("id") for n in old_path.get("nodes", []))
+                    new_nodes = set(n.get("id") for n in new_path.get("nodes", []))
+                    added = new_nodes - old_nodes
+                    if added:
+                        nodes_map = {n["id"]: n["name"] for n in new_path.get("nodes", [])}
+                        added_names = [nodes_map.get(nid, nid) for nid in list(added)[:3]]
+                        await websocket.send_json({
+                            "type": "system_notice",
+                            "content": f"📋 学习路径已调整：新增知识点「{'、'.join(added_names)}」",
+                            "timestamp": _now(),
+                        })
+            except Exception:
+                pass
 
             # 社交：检查新完成节点并发布动态
             try:
