@@ -1,46 +1,53 @@
 /** 全局状态管理 */
 
 import { create } from 'zustand'
-import type { ChatMessage, LearningPath, StudentProfile } from '../types'
+import type { ChatMessage, LearningPath, StudentProfile, AgentTrace, NodeState } from '../types'
 
 interface AppState {
-  // 会话
   sessionId: string
   setSessionId: (id: string) => void
 
-  // LLM 配置
   llmConfig: { apiKey: string; baseUrl: string; model: string }
   setLlmConfig: (config: { apiKey: string; baseUrl: string; model: string }) => void
   isConfigured: () => boolean
 
-  // 消息
   messages: ChatMessage[]
   addMessage: (msg: ChatMessage) => void
+  updateLastAssistantContent: (content: string) => void
   clearMessages: () => void
 
-  // 加载状态
   isLoading: boolean
   setLoading: (loading: boolean) => void
 
-  // 当前活跃 Agent
   activeAgent: string | null
   setActiveAgent: (agent: string | null) => void
 
-  // Agent 协作记录
   agentOutputs: Record<string, string>
   setAgentOutputs: (outputs: Record<string, string>) => void
 
-  // 学习路径
+  agentTraces: AgentTrace[]
+  addTrace: (trace: AgentTrace) => void
+  clearTraces: () => void
+
+  streamingContent: string
+  appendStreamingContent: (chunk: string) => void
+  clearStreamingContent: () => void
+
   learningPath: LearningPath | null
   setLearningPath: (path: LearningPath | null) => void
 
-  // 学生画像
+  nodeStates: NodeState[]
+  setNodeStates: (states: NodeState[]) => void
+  updateNodeState: (nodeId: string, status: NodeState['status'], score?: number) => void
+
   profile: StudentProfile | null
   setProfile: (profile: StudentProfile | null) => void
 
-  // 设置弹窗
   showSettings: boolean
   setShowSettings: (show: boolean) => void
+
+  rightPanel: 'graph' | 'progress'
+  setRightPanel: (panel: 'graph' | 'progress') => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -62,6 +69,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   messages: [],
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
+  updateLastAssistantContent: (content) => set((s) => {
+    const msgs = [...s.messages]
+    let lastIdx = -1
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].role === 'assistant') { lastIdx = i; break }
+    }
+    if (lastIdx >= 0) msgs[lastIdx] = { ...msgs[lastIdx], content }
+    return { messages: msgs }
+  }),
   clearMessages: () => set({ messages: [] }),
 
   isLoading: false,
@@ -73,12 +89,38 @@ export const useAppStore = create<AppState>((set, get) => ({
   agentOutputs: {},
   setAgentOutputs: (outputs) => set({ agentOutputs: outputs }),
 
+  agentTraces: [],
+  addTrace: (trace) => set((s) => ({ agentTraces: [...s.agentTraces, trace] })),
+  clearTraces: () => set({ agentTraces: [] }),
+
+  streamingContent: '',
+  appendStreamingContent: (chunk) => set((s) => ({
+    streamingContent: s.streamingContent + chunk,
+  })),
+  clearStreamingContent: () => set({ streamingContent: '' }),
+
   learningPath: null,
   setLearningPath: (path) => set({ learningPath: path }),
 
+  nodeStates: [],
+  setNodeStates: (states) => set({ nodeStates: states }),
+  updateNodeState: (nodeId, status, score) => set((s) => {
+    const states = [...s.nodeStates]
+    const idx = states.findIndex((n) => n.nodeId === nodeId)
+    if (idx >= 0) {
+      states[idx] = { ...states[idx], status, score: score ?? states[idx].score }
+    } else {
+      states.push({ nodeId, status, score })
+    }
+    return { nodeStates: states }
+  }),
+
   profile: null,
-  setProfile: (profile) => set({ profile: profile }),
+  setProfile: (profile) => set({ profile }),
 
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
+
+  rightPanel: 'graph',
+  setRightPanel: (panel) => set({ rightPanel: panel }),
 }))
