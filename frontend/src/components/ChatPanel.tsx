@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import AgentWebSocket from '../services/websocket'
 import MessageBubble from './MessageBubble'
-import type { ChatMessage, WSEvent } from '../types'
+import type { WSEvent } from '../types'
 import { Send, Sparkles, Terminal, HelpCircle, Brain } from 'lucide-react'
 
 export default function ChatPanel() {
@@ -14,8 +14,8 @@ export default function ChatPanel() {
     messages, addMessage, sessionId, llmConfig,
     isLoading, setLoading, setActiveAgent, setAgentOutputs,
     setLearningPath, setProfile,
-    addTrace, clearTraces,
-    streamingContent, appendStreamingContent, clearStreamingContent,
+    clearTraces,
+    streamingContent, clearStreamingContent,
   } = useAppStore()
 
   useEffect(() => {
