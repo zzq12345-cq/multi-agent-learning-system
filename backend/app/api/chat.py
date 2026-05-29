@@ -9,6 +9,7 @@ from app.agents.graph import agent_graph
 from app.agents import AgentState
 from app.deps import LLMConfig, get_llm_config
 from app.knowledge.python_graph import PYTHON_KNOWLEDGE_GRAPH
+from app.services.session_store import save_session, load_session, delete_session_file
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -40,7 +41,7 @@ async def send_message(req: ChatRequest):
     llm_config = get_llm_config()
     session_id = req.session_id or str(uuid.uuid4())
 
-    state = sessions.get(session_id, _create_initial_state(session_id))
+    state = sessions.get(session_id) or load_session(session_id) or _create_initial_state(session_id)
     state["llm_config"] = {
         "api_key": llm_config.api_key,
         "base_url": llm_config.base_url,
@@ -50,6 +51,7 @@ async def send_message(req: ChatRequest):
 
     result = await agent_graph.ainvoke(state)
     sessions[session_id] = result
+    save_session(session_id, result)
 
     ai_messages = [m for m in result["messages"] if m.type == "ai"]
     last_msg = ai_messages[-1] if ai_messages else None
@@ -70,7 +72,11 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
     await websocket.accept()
 
     if session_id not in sessions:
-        sessions[session_id] = _create_initial_state(session_id)
+        loaded = load_session(session_id)
+        if loaded:
+            sessions[session_id] = loaded
+        else:
+            sessions[session_id] = _create_initial_state(session_id)
 
     try:
         while True:
@@ -134,6 +140,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
 
             if result:
                 sessions[session_id] = result
+                save_session(session_id, result)
 
             final_state = result or sessions[session_id]
             ai_messages = [m for m in final_state.get("messages", []) if m.type == "ai"]
@@ -186,6 +193,7 @@ async def get_python_graph():
 @router.delete("/sessions/{session_id}")
 async def delete_session(session_id: str):
     sessions.pop(session_id, None)
+    delete_session_file(session_id)
     return {"status": "ok"}
 
 
