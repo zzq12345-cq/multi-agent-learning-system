@@ -35,6 +35,10 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("数据库初始化完成")
 
+    # 初始化 mock 社交数据
+    from app.services.seed_social import seed_social_data
+    seed_social_data()
+
     yield
     logger.info("应用关闭")
 

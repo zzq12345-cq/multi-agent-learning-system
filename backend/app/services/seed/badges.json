@@ -1,0 +1,6 @@
+{
+  "user-alice": ["first_learn", "perfect_score", "streak_3"],
+  "user-bob": ["first_learn", "streak_3", "multi_subject"],
+  "user-carol": ["first_learn", "perfect_score"],
+  "user-dave": ["first_learn"]
+}
