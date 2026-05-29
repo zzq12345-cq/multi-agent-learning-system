@@ -1,5 +1,6 @@
 """对话 API — REST + WebSocket 事件流"""
 
+import asyncio
 import time
 import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 # 安全限制常量
 MAX_SESSIONS = 100
 MAX_MESSAGE_LENGTH = 5000
+AGENT_TIMEOUT_SECONDS = 120  # Agent 执行超时时间（秒）
 
 # 内存会话存储（Task 8 替换为持久化）
 sessions: dict[str, dict] = {}
@@ -101,6 +103,12 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
     try:
         while True:
             raw = await websocket.receive_json()
+
+            # 检查是否是取消请求
+            if raw.get("type") == "cancel":
+                logger.info(f"[{session_id}] 用户取消执行")
+                continue
+
             message = raw.get("message", "")
             if len(message) > MAX_MESSAGE_LENGTH:
                 await websocket.send_json({

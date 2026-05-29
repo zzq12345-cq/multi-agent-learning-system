@@ -1,6 +1,7 @@
 import { AGENTS } from '../types'
 import { useAppStore } from '../stores/useAppStore'
 import AgentFlowViz from './AgentFlowViz'
+import DemoMode from './DemoMode'
 import {
   Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck, CheckCircle2,
 } from 'lucide-react'
@@ -25,6 +26,9 @@ export default function AgentPanel() {
           Agent 协作面板
         </h3>
       </div>
+
+      {/* 演示模式 */}
+      <DemoMode />
 
       {/* 协作流转动画 */}
       <div className="px-3 pt-3">

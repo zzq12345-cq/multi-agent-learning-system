@@ -15,6 +15,7 @@ export default function Header() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/')}
+          onDoubleClick={() => { localStorage.setItem('demo_mode', 'true'); window.location.reload() }}
           className="flex items-center gap-2 group text-left active:scale-95 transition-transform"
         >
           <div className="p-1.5 bg-zinc-900 rounded-lg">
