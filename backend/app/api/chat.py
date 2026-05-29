@@ -131,6 +131,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             state["messages"] = list(state["messages"]) + [HumanMessage(content=message)]
             state["llm_config"] = llm_cfg
             state["event_log"] = []
+            state["_prev_node_states"] = dict(state.get("node_states", {}))
 
             # 协调者开始
             await websocket.send_json({
@@ -224,6 +225,40 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                 "mastery_data": final_state.get("mastery_data"),
                 "timestamp": _now(),
             })
+
+            # 社交：检查新完成节点并发布动态
+            try:
+                from app.services.social import post_activity, check_badges, BADGE_DEFINITIONS
+                new_node_states = final_state.get("node_states", {})
+                old_node_states = state.get("_prev_node_states", {})
+                username = final_state.get("metadata", {}).get("username", f"用户{session_id[:6]}")
+                user_id = final_state.get("user_id", session_id)
+                learning_path = final_state.get("learning_path", {})
+                nodes_map = {n["id"]: n["name"] for n in learning_path.get("nodes", [])}
+
+                for nid, ns in new_node_states.items():
+                    old_status = old_node_states.get(nid, {}).get("status")
+                    if ns.get("status") == "completed" and old_status != "completed":
+                        node_name = nodes_map.get(nid, nid)
+                        score = ns.get("score", "")
+                        content = f"完成了「{node_name}」" + (f"，得分 {score}" if score else "")
+                        post_activity(
+                            user_id, username, "node_completed", content,
+                            {"node_id": nid, "node_name": node_name, "score": score, "domain": learning_path.get("domain", "")},
+                        )
+
+                # 检查徽章
+                new_badges = check_badges(user_id, final_state)
+                for badge_id in new_badges:
+                    badge = next((b for b in BADGE_DEFINITIONS if b["id"] == badge_id), None)
+                    if badge:
+                        post_activity(
+                            user_id, username, "badge_earned",
+                            f"获得徽章「{badge['name']}」{badge['icon']}",
+                            {"badge_id": badge_id},
+                        )
+            except Exception:
+                pass  # 社交功能不影响主流程
 
     except WebSocketDisconnect:
         pass
