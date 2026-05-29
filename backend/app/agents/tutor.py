@@ -47,7 +47,8 @@ async def tutor_node(state: AgentState) -> dict:
 
     # RAG 检索相关教学资料
     user_query = state["messages"][-1].content if state["messages"] else ""
-    reference = search_knowledge(user_query, top_k=2)
+    domain = state.get("learning_path", {}).get("domain")
+    reference = search_knowledge(user_query, top_k=2, domain=domain)
 
     prompt_content = TUTOR_PROMPT.format(
         profile=_format_profile(profile),

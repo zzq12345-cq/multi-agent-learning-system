@@ -51,7 +51,8 @@ async def generator_node(state: AgentState) -> dict:
     user_query = state["messages"][-1].content if state["messages"] else ""
     node_name = current_node.get("name", "") if current_node else ""
     search_query = f"{node_name} {user_query}" if node_name else user_query
-    reference = search_knowledge(search_query, top_k=3)
+    domain = learning_path.get("domain") if learning_path else None
+    reference = search_knowledge(search_query, top_k=3, domain=domain)
 
     prompt_content = GENERATOR_PROMPT.format(
         profile=_format_profile(profile),

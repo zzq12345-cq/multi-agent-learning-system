@@ -4,9 +4,12 @@ import re
 import math
 from pathlib import Path
 from collections import Counter
+from app.config import DATA_DIR
 
 # 教学文档存储目录
 DOCS_DIR = Path(__file__).parent.parent / "knowledge" / "docs"
+# 用户上传文档目录
+USER_DOCS_DIR = DATA_DIR / "docs"
 
 
 def _tokenize(text: str) -> list[str]:
@@ -75,20 +78,46 @@ class SimpleRAG:
             docs_dir.mkdir(parents=True, exist_ok=True)
             self._create_default_docs()
 
-        # 读取 .md 文件
+        # 读取预置文档
         patterns = [f"{domain}/*.md", "*.md"] if domain else ["**/*.md"]
         for pattern in patterns:
             for filepath in docs_dir.glob(pattern):
                 content = filepath.read_text(encoding="utf-8")
-                file_chunks = self._split_chunks(content, filepath.stem)
+                # 推断 domain：取父目录名（如果在子目录中）
+                file_domain = (
+                    filepath.parent.name
+                    if filepath.parent != docs_dir
+                    else ""
+                )
+                file_chunks = self._split_chunks(
+                    content, filepath.stem, domain=file_domain,
+                )
                 self.chunks.extend(file_chunks)
+
+        # 读取用户上传文档
+        if USER_DOCS_DIR.exists():
+            user_patterns = (
+                [f"{domain}/*.md"] if domain else ["**/*.md"]
+            )
+            for pattern in user_patterns:
+                for filepath in USER_DOCS_DIR.glob(pattern):
+                    content = filepath.read_text(encoding="utf-8")
+                    file_domain = (
+                        filepath.parent.name
+                        if filepath.parent != USER_DOCS_DIR
+                        else ""
+                    )
+                    file_chunks = self._split_chunks(
+                        content, filepath.stem, domain=file_domain,
+                    )
+                    self.chunks.extend(file_chunks)
 
         if self.chunks:
             self.tfidf_docs, _ = _compute_tfidf(self.chunks)
         self._loaded = True
 
     def _split_chunks(
-        self, content: str, source: str, chunk_size: int = 500
+        self, content: str, source: str, domain: str = "", chunk_size: int = 500,
     ) -> list[str]:
         """按段落分块"""
         paragraphs = content.split("\n\n")
@@ -101,18 +130,18 @@ class SimpleRAG:
                 continue
             if len(current) + len(para) > chunk_size and current:
                 chunks.append(current)
-                self.metadata.append({"source": source})
+                self.metadata.append({"source": source, "domain": domain})
                 current = para
             else:
                 current = current + "\n\n" + para if current else para
 
         if current:
             chunks.append(current)
-            self.metadata.append({"source": source})
+            self.metadata.append({"source": source, "domain": domain})
 
         return chunks
 
-    def search(self, query: str, top_k: int = 3) -> list[dict]:
+    def search(self, query: str, top_k: int = 3, domain: str = None) -> list[dict]:
         """检索最相关的文档片段"""
         if not self.chunks:
             self.load_documents()
@@ -125,8 +154,19 @@ class SimpleRAG:
         total = len(query_tokens) if query_tokens else 1
         query_tfidf = {t: count / total for t, count in query_tf.items()}
 
+        # 如果指定 domain，只在该 domain 的 chunks 中检索
+        if domain:
+            candidates = [
+                (i, doc_tfidf)
+                for i, doc_tfidf in enumerate(self.tfidf_docs)
+                if i < len(self.metadata)
+                and self.metadata[i].get("domain") == domain
+            ]
+        else:
+            candidates = list(enumerate(self.tfidf_docs))
+
         scores = []
-        for i, doc_tfidf in enumerate(self.tfidf_docs):
+        for i, doc_tfidf in candidates:
             sim = _cosine_sim(query_tfidf, doc_tfidf)
             scores.append((sim, i))
 
@@ -146,6 +186,14 @@ class SimpleRAG:
                 })
 
         return results
+
+    def reload(self):
+        """重新加载文档"""
+        self._loaded = False
+        self.chunks = []
+        self.metadata = []
+        self.tfidf_docs = []
+        self.load_documents()
 
     def _create_default_docs(self):
         """创建默认教学文档"""
@@ -177,10 +225,10 @@ def get_rag() -> SimpleRAG:
     return _rag_instance
 
 
-def search_knowledge(query: str, top_k: int = 3) -> str:
+def search_knowledge(query: str, top_k: int = 3, domain: str = None) -> str:
     """检索相关知识，返回格式化的参考文本"""
     rag = get_rag()
-    results = rag.search(query, top_k=top_k)
+    results = rag.search(query, top_k=top_k, domain=domain)
 
     if not results:
         return ""

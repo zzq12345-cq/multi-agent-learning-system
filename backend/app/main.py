@@ -13,6 +13,7 @@ from app.api.chat import router as chat_router
 from app.api.learning import router as learning_router
 from app.api.auth import router as auth_router
 from app.api.social import router as social_router
+from app.api.subjects import router as subjects_router
 
 settings = get_settings()
 
@@ -57,6 +58,7 @@ app.include_router(chat_router)
 app.include_router(learning_router)
 app.include_router(auth_router)
 app.include_router(social_router)
+app.include_router(subjects_router)
 
 
 @app.get("/")

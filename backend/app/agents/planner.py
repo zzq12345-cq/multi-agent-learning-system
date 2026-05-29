@@ -7,6 +7,7 @@ from app.deps import LLMConfig
 from app.services.learning_engine import init_node_states
 from app.services.mastery import init_mastery_data
 from app.services.memory import build_context_summary, get_conversation_window
+from app.services.graph_store import save_graph, validate_domain, slugify_domain
 
 PLANNER_PROMPT = """你是一个学习路径规划专家（Planner Agent）。
 你的职责是根据学生画像和学习目标，设计个性化的学习路径。
@@ -73,6 +74,16 @@ async def planner_node(state: AgentState) -> dict:
     learning_path = _extract_path_json(content)
 
     if learning_path:
+        # 自动保存为动态图谱
+        domain = learning_path.get("domain", "")
+        if domain and not validate_domain(domain):
+            domain = slugify_domain(domain)
+        if domain:
+            try:
+                save_graph(domain, learning_path)
+            except Exception:
+                pass
+
         summary = _generate_path_summary(learning_path)
         node_states = init_node_states(learning_path)
         return {

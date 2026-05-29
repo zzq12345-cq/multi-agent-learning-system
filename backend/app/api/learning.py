@@ -3,9 +3,7 @@
 import time
 
 from fastapi import APIRouter
-from app.knowledge.python_graph import PYTHON_KNOWLEDGE_GRAPH
-from app.knowledge.web_graph import WEB_KNOWLEDGE_GRAPH
-from app.knowledge.datastructure_graph import DS_KNOWLEDGE_GRAPH
+from app.services.graph_store import list_all_graphs, get_graph
 from app.services.rag import search_knowledge
 from app.services.mastery import (
     calculate_mastery_decay,
@@ -15,31 +13,23 @@ from app.services.mastery import (
 
 router = APIRouter(prefix="/api/learning", tags=["learning"])
 
-GRAPHS = {
-    "python": PYTHON_KNOWLEDGE_GRAPH,
-    "web": WEB_KNOWLEDGE_GRAPH,
-    "datastructure": DS_KNOWLEDGE_GRAPH,
-}
-
 
 @router.get("/graphs/{domain}")
 async def get_knowledge_graph(domain: str):
     """获取指定学科的知识图谱"""
-    graph = GRAPHS.get(domain)
+    graph = get_graph(domain)
     if not graph:
-        return {"error": f"未找到 {domain} 学科图谱", "available": list(GRAPHS.keys())}
+        return {
+            "error": f"未找到 {domain} 学科图谱",
+            "available": [g["domain"] for g in list_all_graphs()],
+        }
     return graph
 
 
 @router.get("/graphs")
 async def list_graphs():
     """列出所有可用学科图谱"""
-    return {
-        "graphs": [
-            {"domain": k, "title": v["title"], "nodes_count": len(v["nodes"])}
-            for k, v in GRAPHS.items()
-        ]
-    }
+    return {"graphs": list_all_graphs()}
 
 
 @router.get("/path/{session_id}")
