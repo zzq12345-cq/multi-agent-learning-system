@@ -42,9 +42,10 @@ export default function AgentFlowViz() {
               key={i}
               x1={`${x1}%`} y1="50%"
               x2={`${x2}%`} y2="50%"
-              stroke="#93c5fd"
-              strokeWidth="1"
-              strokeDasharray="4,3"
+              stroke={i === routes.length - 1 ? '#3b82f6' : '#a1a1aa'}
+              strokeWidth={i === routes.length - 1 ? 2 : 1}
+              strokeDasharray="6,4"
+              className={i === routes.length - 1 ? 'animate-[dash_1s_linear_infinite]' : ''}
               markerEnd="url(#arrow)"
             />
           )

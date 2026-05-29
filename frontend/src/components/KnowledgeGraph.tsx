@@ -54,7 +54,7 @@ function CustomKnowledgeNode({ data }: { data: any }) {
   return (
     <div
       onClick={handleClick}
-      className={`relative px-4 py-3 rounded-xl text-left w-[180px] bg-white group transition-all duration-200 hover:-translate-y-0.5 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+      className={`relative px-4 py-3 rounded-xl text-left w-[180px] bg-white group transition-all duration-200 hover:-translate-y-0.5 ${isClickable ? 'cursor-pointer hover:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] hover:border-blue-300' : 'cursor-default opacity-75'}`}
       style={{ border: `2px solid ${style.border}` }}
     >
       <Handle type="target" position={Position.Top} className="!bg-gray-300 !border-gray-200 !w-1.5 !h-1.5 !opacity-60" />

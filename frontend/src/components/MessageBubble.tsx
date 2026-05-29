@@ -60,7 +60,7 @@ export default function MessageBubble({ message }: Props) {
   const AgentIcon = agent ? ICON_MAP[message.agentName || ''] || Sparkles : null
 
   return (
-    <div className={`flex gap-3 items-start ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex gap-3 items-start ${isUser ? 'flex-row-reverse' : ''} animate-[fadeSlideUp_0.3s_ease-out]`}>
       {/* 头像 */}
       <div
         className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-200 ${

@@ -4,7 +4,14 @@ import Header from '../components/Header'
 import { Camera, Award, BarChart3, Key, LogOut, Trash2 } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { user, logout } = useAppStore()
+  const { user, logout, nodeStates, learningPath, masteryData } = useAppStore()
+
+  const completedNodes = nodeStates.filter(n => n.status === 'completed').length
+  const totalSubjects = learningPath ? 1 : 0
+  const avgMastery = (() => {
+    const values = Object.values(masteryData).map(d => d.mastery).filter(m => m > 0)
+    return values.length > 0 ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : 0
+  })()
   const [profile, setProfile] = useState<{
     user_id: string
     username: string
@@ -158,9 +165,9 @@ export default function ProfilePage() {
               学习统计
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatItem label="完成节点" value="—" />
-              <StatItem label="学习学科" value="—" />
-              <StatItem label="平均掌握度" value="—" />
+              <StatItem label="完成节点" value={String(completedNodes)} />
+              <StatItem label="学习学科" value={String(totalSubjects)} />
+              <StatItem label="平均掌握度" value={avgMastery > 0 ? `${avgMastery}%` : '0%'} />
               <StatItem label="学习时长" value="—" />
             </div>
           </div>
