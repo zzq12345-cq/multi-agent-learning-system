@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import { listSubjects, getGraphByDomain } from '../services/api'
-import { BookOpen, Code, Database, Sparkles } from 'lucide-react'
+import { BookOpen, Code, Database, Sparkles, ChevronDown, Search, Check } from 'lucide-react'
 
 const DOMAIN_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   python: Code,
@@ -19,7 +19,10 @@ interface SubjectInfo {
 
 export default function SubjectSelector() {
   const [subjects, setSubjects] = useState<SubjectInfo[]>([])
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
   const { setLearningPath, setNodeStates, activeDomain, setActiveDomain } = useAppStore()
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     listSubjects().then((data) => {
@@ -28,7 +31,6 @@ export default function SubjectSelector() {
     })
   }, [])
 
-  // 每 10 秒刷新一次（捕获 Planner 新建的学科）
   useEffect(() => {
     const timer = setInterval(() => {
       listSubjects().then(setSubjects)
@@ -36,8 +38,21 @@ export default function SubjectSelector() {
     return () => clearInterval(timer)
   }, [])
 
+  // 点击外部关闭
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
   const handleSelect = async (domain: string) => {
     setActiveDomain(domain)
+    setOpen(false)
+    setSearch('')
     const graph = await getGraphByDomain(domain)
     if (graph && !graph.error) {
       setLearningPath(graph)
@@ -45,31 +60,87 @@ export default function SubjectSelector() {
     }
   }
 
+  const activeSubject = subjects.find((s) => s.domain === activeDomain)
+  const ActiveIcon = activeSubject ? (DOMAIN_ICONS[activeSubject.domain] || Sparkles) : Sparkles
+
+  const filtered = subjects.filter((s) =>
+    s.title.toLowerCase().includes(search.toLowerCase()) ||
+    s.domain.toLowerCase().includes(search.toLowerCase())
+  )
+
   if (!subjects.length) return null
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-200/50 bg-white/50 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
-      <span className="text-[9px] text-zinc-400 font-medium mr-1 flex-shrink-0">学科</span>
-      {subjects.map((s) => {
-        const Icon = DOMAIN_ICONS[s.domain] || Sparkles
-        const isActive = activeDomain === s.domain
-        return (
-          <button
-            key={s.domain}
-            onClick={() => handleSelect(s.domain)}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium transition-all flex-shrink-0 whitespace-nowrap ${
-              isActive
-                ? 'bg-zinc-900 text-white shadow-sm'
-                : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700'
-            }`}
-            title={s.source === 'dynamic' ? '动态生成的学科' : '预置学科'}
-          >
-            <Icon className="w-3 h-3" />
-            {s.title.length > 8 ? s.title.slice(0, 8) + '…' : s.title}
-            {s.source === 'dynamic' && <span className="text-[7px] opacity-60">✨</span>}
-          </button>
-        )
-      })}
+    <div className="relative px-3 py-2 border-b border-zinc-200/50 bg-white/50" ref={dropdownRef}>
+      {/* 触发按钮 */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 transition-all text-left"
+      >
+        <ActiveIcon className="w-3.5 h-3.5 text-zinc-500" />
+        <span className="flex-1 text-[11px] font-medium text-zinc-800 truncate">
+          {activeSubject?.title || '选择学科'}
+        </span>
+        {activeSubject?.source === 'dynamic' && <span className="text-[8px]">✨</span>}
+        <ChevronDown className={`w-3 h-3 text-zinc-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* 下拉面板 */}
+      {open && (
+        <div className="absolute left-3 right-3 top-full mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          {/* 搜索框 */}
+          <div className="p-2 border-b border-zinc-100">
+            <div className="flex items-center gap-1.5 px-2 py-1.5 bg-zinc-50 rounded-lg">
+              <Search className="w-3 h-3 text-zinc-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="搜索学科..."
+                autoFocus
+                className="flex-1 bg-transparent text-[10px] text-zinc-800 placeholder-zinc-400 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* 学科列表 */}
+          <div className="max-h-48 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-[10px] text-zinc-400 text-center">
+                无匹配学科，在对话中说出想学的内容即可创建
+              </div>
+            ) : (
+              filtered.map((s) => {
+                const Icon = DOMAIN_ICONS[s.domain] || Sparkles
+                const isActive = activeDomain === s.domain
+                return (
+                  <button
+                    key={s.domain}
+                    onClick={() => handleSelect(s.domain)}
+                    className={`flex items-center gap-2.5 w-full px-3 py-2 text-left transition-colors ${
+                      isActive ? 'bg-zinc-50' : 'hover:bg-zinc-50'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-900' : 'text-zinc-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className={`text-[11px] font-medium truncate ${isActive ? 'text-zinc-900' : 'text-zinc-700'}`}>
+                          {s.title}
+                        </span>
+                        {s.source === 'dynamic' && <span className="text-[8px]">✨</span>}
+                      </div>
+                      <span className="text-[9px] text-zinc-400">
+                        {s.nodes_count} 节点{s.doc_count > 0 ? ` · ${s.doc_count} 文档` : ''}
+                      </span>
+                    </div>
+                    {isActive && <Check className="w-3.5 h-3.5 text-zinc-900" />}
+                  </button>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
