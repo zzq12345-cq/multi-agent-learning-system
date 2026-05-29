@@ -2,8 +2,55 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import AgentWebSocket from '../services/websocket'
 import MessageBubble from './MessageBubble'
+import { AGENTS } from '../types'
 import type { WSEvent } from '../types'
 import { Send, Sparkles, Terminal, HelpCircle, Brain } from 'lucide-react'
+
+// Agent 协作进度内联组件
+function AgentProgressInline() {
+  const { activeAgent, agentTraces } = useAppStore()
+
+  const AGENT_ACTIONS: Record<string, string> = {
+    coordinator: '分析意图...',
+    profiler: '评估学习水平...',
+    planner: '规划学习路径...',
+    generator: '生成学习资源...',
+    tutor: '组织回答...',
+    assessor: '准备评估...',
+  }
+
+  const currentAction = activeAgent ? AGENT_ACTIONS[activeAgent] || '处理中...' : '思考中...'
+  const agentName = activeAgent ? AGENTS[activeAgent]?.displayName || activeAgent : ''
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className="flex h-1.5 w-1.5 relative">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+        </span>
+        <span className="text-[10px] text-zinc-600 font-medium">
+          {agentName && <span className="text-zinc-900">{agentName}</span>}
+          {agentName && ' · '}
+          {currentAction}
+        </span>
+      </div>
+      {agentTraces.length > 1 && (
+        <div className="flex items-center gap-1 text-[8px] text-zinc-400 font-mono pl-3.5">
+          {agentTraces
+            .filter(t => t.action === 'start')
+            .slice(-4)
+            .map((t, i) => (
+              <span key={i} className="flex items-center gap-1">
+                {i > 0 && <span>&rarr;</span>}
+                <span className={t.agent === activeAgent ? 'text-emerald-600' : ''}>{AGENTS[t.agent]?.displayName || t.agent}</span>
+              </span>
+            ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ChatPanel() {
   const [input, setInput] = useState('')
@@ -33,6 +80,18 @@ export default function ChatPanel() {
     })
     return () => { ws.disconnect() }
   }, [sessionId])
+
+  // 监听图谱节点点击发送
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail?.message && wsRef.current?.connected) {
+        wsRef.current.send(detail.message)
+      }
+    }
+    window.addEventListener('graph-send-message', handler)
+    return () => window.removeEventListener('graph-send-message', handler)
+  }, [])
 
   const handleWSEvent = useCallback((event: WSEvent) => {
     const store = useAppStore.getState()
@@ -213,12 +272,8 @@ export default function ChatPanel() {
             <div className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-200/80 flex items-center justify-center text-zinc-400 flex-shrink-0">
               <Sparkles className="w-3.5 h-3.5 text-zinc-500 animate-pulse" />
             </div>
-            <div className="px-4 py-2.5 bg-white border border-zinc-200/60 rounded-2xl rounded-tl-sm shadow-[0_1px_3px_rgba(0,0,0,0.01)] flex items-center min-h-[34px]">
-              <div className="flex gap-1.5">
-                <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1 h-1 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
+            <div className="px-4 py-2.5 bg-white border border-zinc-200/60 rounded-2xl rounded-tl-sm shadow-[0_1px_3px_rgba(0,0,0,0.01)] min-h-[34px]">
+              <AgentProgressInline />
             </div>
           </div>
         )}

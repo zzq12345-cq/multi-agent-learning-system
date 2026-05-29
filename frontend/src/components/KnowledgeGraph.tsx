@@ -28,9 +28,33 @@ function CustomKnowledgeNode({ data }: { data: any }) {
   const { name, difficulty, status = 'available' } = data
   const style = STATUS_STYLES[status as NodeStatus] || STATUS_STYLES.available
 
+  const handleClick = () => {
+    if (status === 'available' || status === 'in_progress') {
+      const store = useAppStore.getState()
+      const msg = status === 'available'
+        ? `我想学习「${name}」这个知识点，请为我生成学习资料`
+        : `继续学习「${name}」，帮我深入讲解`
+
+      store.addMessage({
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: msg,
+        timestamp: Date.now(),
+      })
+      store.setLoading(true)
+      store.clearTraces()
+      store.clearStreamingContent()
+
+      window.dispatchEvent(new CustomEvent('graph-send-message', { detail: { message: msg } }))
+    }
+  }
+
+  const isClickable = status === 'available' || status === 'in_progress'
+
   return (
     <div
-      className="relative px-3.5 py-3 rounded-xl text-left w-[170px] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_4px_16px_-8px_rgba(0,0,0,0.02)] group transition-all duration-200 hover:-translate-y-0.5"
+      onClick={handleClick}
+      className={`relative px-3.5 py-3 rounded-xl text-left w-[170px] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_4px_16px_-8px_rgba(0,0,0,0.02)] group transition-all duration-200 hover:-translate-y-0.5 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
       style={{ border: `1px solid ${style.border}`, background: style.bg }}
     >
       <Handle type="target" position={Position.Top} className="!bg-zinc-300 !border-zinc-200 !w-1 !h-1 !opacity-60" />
@@ -68,7 +92,7 @@ function graphToFlow(path: LearningPath, nodeStates: Map<string, NodeStatus>) {
       id: node.id,
       type: 'custom',
       position: { x: col * 200 + 40, y: row * 110 + 40 },
-      data: { name: node.name, difficulty: node.difficulty, description: node.description, status },
+      data: { name: node.name, difficulty: node.difficulty, description: node.description, status, nodeId: node.id },
       sourcePosition: Position.Bottom,
       targetPosition: Position.Top,
     }
