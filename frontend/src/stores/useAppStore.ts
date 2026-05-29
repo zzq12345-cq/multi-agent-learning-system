@@ -44,8 +44,8 @@ interface AppState {
   profile: StudentProfile | null
   setProfile: (profile: StudentProfile | null) => void
 
-  rightPanel: 'graph' | 'progress'
-  setRightPanel: (panel: 'graph' | 'progress') => void
+  rightPanel: 'graph' | 'progress' | 'docs'
+  setRightPanel: (panel: 'graph' | 'progress' | 'docs') => void
 
   masteryData: Record<string, { mastery: number; last_review_ts: number; attempts: number }>
   setMasteryData: (data: Record<string, { mastery: number; last_review_ts: number; attempts: number }>) => void

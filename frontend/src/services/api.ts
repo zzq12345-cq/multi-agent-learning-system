@@ -44,3 +44,42 @@ export async function getGraphByDomain(domain: string) {
   if (!res.ok) return null
   return res.json()
 }
+
+export async function listSubjects() {
+  const res = await fetch('/api/subjects')
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.subjects || []
+}
+
+export async function uploadDoc(domain: string, file: File) {
+  const token = localStorage.getItem('auth_token') || ''
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`/api/subjects/${domain}/upload`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || '上传失败')
+  }
+  return res.json()
+}
+
+export async function getDomainDocs(domain: string) {
+  const res = await fetch(`/api/subjects/${domain}/docs`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.docs || []
+}
+
+export async function deleteDomainDoc(domain: string, filename: string) {
+  const token = localStorage.getItem('auth_token') || ''
+  const res = await fetch(`/api/subjects/${domain}/docs/${filename}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  })
+  return res.ok
+}
