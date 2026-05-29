@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 # 安全限制常量
 MAX_SESSIONS = 100
 MAX_MESSAGE_LENGTH = 5000
-AGENT_TIMEOUT_SECONDS = 120  # Agent 执行超时时间（秒）
+AGENT_TIMEOUT_SECONDS = 300  # Agent 执行超时时间（秒）
 
 # 内存会话存储（Task 8 替换为持久化）
 sessions: dict[str, dict] = {}
