@@ -1,10 +1,16 @@
 """会话持久化 — JSON 文件存储"""
 
 import json
+import re
 from pathlib import Path
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 
 STORE_DIR = Path("./data/sessions")
+
+
+def _validate_session_id(session_id: str) -> bool:
+    """校验 session_id 是否为合法 UUID 格式"""
+    return bool(re.match(r'^[a-f0-9\-]{36}$', session_id))
 
 
 def _ensure_dir():
@@ -36,6 +42,8 @@ def _deserialize_messages(data: list[dict]) -> list[BaseMessage]:
 
 def save_session(session_id: str, state: dict):
     """保存会话到文件"""
+    if not _validate_session_id(session_id):
+        return
     _ensure_dir()
     data = {
         "user_id": state.get("user_id", session_id),
@@ -55,6 +63,8 @@ def save_session(session_id: str, state: dict):
 
 def load_session(session_id: str) -> dict | None:
     """从文件加载会话"""
+    if not _validate_session_id(session_id):
+        return None
     filepath = STORE_DIR / f"{session_id}.json"
     if not filepath.exists():
         return None
@@ -87,6 +97,8 @@ def list_sessions() -> list[str]:
 
 def delete_session_file(session_id: str):
     """删除会话文件"""
+    if not _validate_session_id(session_id):
+        return
     filepath = STORE_DIR / f"{session_id}.json"
     if filepath.exists():
         filepath.unlink()

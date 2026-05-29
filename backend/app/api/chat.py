@@ -14,6 +14,10 @@ from app.services.session_store import save_session, load_session, delete_sessio
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
+# 安全限制常量
+MAX_SESSIONS = 100
+MAX_MESSAGE_LENGTH = 5000
+
 # 内存会话存储（Task 8 替换为持久化）
 sessions: dict[str, dict] = {}
 
@@ -79,12 +83,21 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
         if loaded:
             sessions[session_id] = loaded
         else:
+            # 内存上限保护
+            if len(sessions) >= MAX_SESSIONS:
+                oldest = next(iter(sessions))
+                del sessions[oldest]
             sessions[session_id] = _create_initial_state(session_id)
 
     try:
         while True:
             raw = await websocket.receive_json()
             message = raw.get("message", "")
+            if len(message) > MAX_MESSAGE_LENGTH:
+                await websocket.send_json({
+                    "type": "error", "error": "消息过长，请精简后重试", "timestamp": _now(),
+                })
+                continue
             llm_cfg = raw.get("llm_config", {})
             logger.info(f"[{session_id}] 收到消息: {message[:50]}...")
 
@@ -181,7 +194,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
         logger.error(f"[{session_id}] WebSocket 错误: {e}")
         try:
             await websocket.send_json({
-                "type": "error", "error": str(e), "timestamp": _now(),
+                "type": "error", "error": "服务处理异常，请重试", "timestamp": _now(),
             })
         except Exception:
             pass

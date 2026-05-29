@@ -1,6 +1,8 @@
 """用户认证服务 — JWT + 密码哈希"""
 
+import os
 import uuid
+import tempfile
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -8,7 +10,7 @@ from pathlib import Path
 import json
 
 # JWT 配置
-SECRET_KEY = "multi-agent-learning-system-secret-key-2026"
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-only-secret-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
@@ -27,7 +29,16 @@ def _load_users() -> dict:
 
 def _save_users(users: dict):
     USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    USERS_FILE.write_text(json.dumps(users, ensure_ascii=False, indent=2))
+    # 原子写入：先写临时文件再 rename
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=USERS_FILE.parent, suffix=".tmp")
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, str(USERS_FILE))
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
 
 
 def hash_password(password: str) -> str:
