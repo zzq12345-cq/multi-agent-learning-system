@@ -3,6 +3,7 @@ import AgentPanel from '../components/AgentPanel'
 import ChatPanel from '../components/ChatPanel'
 import KnowledgeGraph from '../components/KnowledgeGraph'
 import ProgressDashboard from '../components/ProgressDashboard'
+import SubjectSelector from '../components/SubjectSelector'
 import { useAppStore } from '../stores/useAppStore'
 import { Map, BarChart3 } from 'lucide-react'
 
@@ -26,6 +27,7 @@ export default function LearningPage() {
 
         {/* 右侧：图谱/进度 tab */}
         <div className="w-96 flex-shrink-0 flex flex-col">
+          <SubjectSelector />
           {/* Tab 切换 */}
           <div className="flex border-b border-zinc-200/50 bg-white/50">
             <button

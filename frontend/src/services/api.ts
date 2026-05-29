@@ -31,3 +31,16 @@ export async function getSession(sessionId: string) {
   if (!res.ok) return null
   return res.json()
 }
+
+export async function listGraphs() {
+  const res = await fetch('/api/learning/graphs')
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.graphs || []
+}
+
+export async function getGraphByDomain(domain: string) {
+  const res = await fetch(`/api/learning/graphs/${domain}`)
+  if (!res.ok) return null
+  return res.json()
+}

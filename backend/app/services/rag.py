@@ -10,9 +10,12 @@ DOCS_DIR = Path(__file__).parent.parent / "knowledge" / "docs"
 
 
 def _tokenize(text: str) -> list[str]:
-    """简单中英文分词"""
-    tokens = re.findall(r'[a-zA-Z]+|[一-鿿]', text.lower())
-    return tokens
+    """中英文分词（jieba + 英文空格分词）"""
+    import jieba
+    # jieba 分词处理中文，同时保留英文单词
+    words = jieba.lcut(text.lower())
+    # 过滤掉单字符标点和空白
+    return [w.strip() for w in words if len(w.strip()) > 0 and not re.match(r'^[\s\W]$', w)]
 
 
 def _compute_tfidf(docs: list[str]) -> tuple[list[dict], dict]:
