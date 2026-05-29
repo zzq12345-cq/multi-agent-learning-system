@@ -1,4 +1,4 @@
-"""协调者 Agent — 意图识别和任务分发"""
+"""协调者 Agent — 意图识别和任务分发（增强版）"""
 
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, PROFILER, PLANNER, GENERATOR, TUTOR, ASSESSOR, END
@@ -13,18 +13,22 @@ COORDINATOR_PROMPT = """你是一个智能学习系统的协调者（Coordinator
 - planner: 规划学习路径、调整学习计划（用于开始新学科或调整路径时）
 - generator: 生成学习资源（讲义、练习题、代码示例）
 - tutor: 实时答疑、概念解释、引导思考
-- assessor: 学习效果评估、生成测试题
+- assessor: 学习效果评估、生成测试题、评判答案
 
 判断规则：
 1. 用户想开始学习新内容/新学科 → planner
-2. 用户问具体知识问题/需要解释 → tutor
-3. 用户想做练习/测试 → assessor
-4. 用户想获取学习资料/笔记 → generator
-5. 用户是新用户/想重新评估水平 → profiler
-6. 简单的问候/闲聊 → 直接回复（以 REPLY: 开头）
+2. 用户问具体知识问题/需要解释/说"不理解" → tutor
+3. 用户想做练习/测试/说"测试一下" → assessor
+4. 用户想获取学习资料/笔记/说"生成"/"给我" → generator
+5. 用户是新用户/想重新评估水平/说"评估" → profiler
+6. 用户回答了测试题目（选 A/B/C/D 或给出答案） → assessor
+7. 用户说"继续"/"下一个"/"下一步" → 如果有学习路径则 generator，否则 planner
+8. 用户说"复习"/"回顾" → assessor
+9. 简单的问候/闲聊 → 直接回复（以 REPLY: 开头）
 
 当前学生画像：{profile}
 当前学习路径：{path}
+当前节点进度：{progress}
 
 请只回复一个 Agent 名称（profiler/planner/generator/tutor/assessor），
 或者如果是简单对话直接回复用户（以 REPLY: 开头）。"""
@@ -37,11 +41,27 @@ async def coordinator_node(state: AgentState) -> dict:
 
     profile_info = state.get("user_profile", {})
     path_info = state.get("learning_path", {})
+    node_states = state.get("node_states", {})
+
+    # 构建进度摘要
+    progress = "无"
+    if node_states:
+        completed = sum(
+            1 for v in node_states.values() if v.get("status") == "completed"
+        )
+        total = len(node_states)
+        in_progress = [
+            k for k, v in node_states.items() if v.get("status") == "in_progress"
+        ]
+        progress = f"已完成 {completed}/{total}"
+        if in_progress:
+            progress += f"，当前学习: {in_progress[0]}"
 
     context_summary = build_context_summary(state)
     system_msg = SystemMessage(content=COORDINATOR_PROMPT.format(
         profile=profile_info or "未建立",
         path=path_info.get("title", "未设置") if path_info else "未设置",
+        progress=progress,
     ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
     recent_messages = get_conversation_window(state["messages"], max_recent=3, max_total=6)

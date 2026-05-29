@@ -60,9 +60,19 @@ async def tutor_node(state: AgentState) -> dict:
     recent_messages = get_conversation_window(state["messages"], max_recent=8, max_total=15)
     response = await llm.ainvoke([system_msg] + list(recent_messages))
 
+    # 检测是否需要生成额外资源
+    need_resource = False
+    content_lower = response.content.lower()
+    if any(kw in content_lower for kw in ["让我给你生成", "我来生成", "生成一个示例", "给你准备"]):
+        need_resource = True
+
     return {
         "messages": [AIMessage(content=response.content, name="tutor")],
         "next_agent": END,
+        "metadata": {
+            **state.get("metadata", {}),
+            "need_resource": need_resource,
+        },
         "agent_outputs": {
             **state.get("agent_outputs", {}),
             "tutor": "答疑完成",

@@ -39,6 +39,14 @@ def _route_after_assessor(state: AgentState) -> str:
     return GRAPH_END
 
 
+def _route_after_tutor(state: AgentState) -> str:
+    """导师完成后：如果建议生成资源，触发生成器"""
+    metadata = state.get("metadata", {})
+    if metadata.get("need_resource"):
+        return GENERATOR
+    return GRAPH_END
+
+
 def build_agent_graph() -> StateGraph:
     """构建多 Agent 协作图"""
     graph = StateGraph(AgentState)
@@ -79,7 +87,12 @@ def build_agent_graph() -> StateGraph:
 
     graph.add_edge(PLANNER, GRAPH_END)
     graph.add_edge(GENERATOR, GRAPH_END)
-    graph.add_edge(TUTOR, GRAPH_END)
+
+    graph.add_conditional_edges(
+        TUTOR,
+        _route_after_tutor,
+        {GENERATOR: GENERATOR, GRAPH_END: GRAPH_END},
+    )
 
     return graph.compile()
 
