@@ -30,6 +30,7 @@ class AgentState(TypedDict):
     next_agent: str
     metadata: dict
     llm_config: dict  # 用户 LLM 配置（序列化后）
+    event_log: list  # Agent 协作事件日志
 
 
 # Agent 名称常量

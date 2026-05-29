@@ -67,3 +67,41 @@ export const AGENTS: Record<string, AgentInfo> = {
   tutor: { name: 'tutor', displayName: '导师', description: '答疑解惑', color: '#ef4444', icon: '👨‍🏫' },
   assessor: { name: 'assessor', displayName: '评估师', description: '学习评估', color: '#06b6d4', icon: '✅' },
 }
+
+// ===== WebSocket 事件 =====
+
+export type WSEventType =
+  | 'agent_start'
+  | 'agent_end'
+  | 'token'
+  | 'route'
+  | 'done'
+  | 'error'
+
+export interface WSEvent {
+  type: WSEventType
+  agent?: string
+  content?: string
+  route_from?: string
+  route_to?: string
+  agent_outputs?: Record<string, string>
+  learning_path?: LearningPath | null
+  user_profile?: StudentProfile | null
+  error?: string
+  timestamp?: number
+}
+
+export interface AgentTrace {
+  agent: string
+  action: 'start' | 'end' | 'route'
+  timestamp: number
+  detail?: string
+}
+
+export type NodeStatus = 'locked' | 'available' | 'in_progress' | 'completed'
+
+export interface NodeState {
+  nodeId: string
+  status: NodeStatus
+  score?: number
+}
