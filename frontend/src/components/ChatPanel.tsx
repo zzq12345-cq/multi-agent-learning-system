@@ -4,7 +4,7 @@ import AgentWebSocket from '../services/websocket'
 import MessageBubble from './MessageBubble'
 import { AGENTS } from '../types'
 import type { WSEvent } from '../types'
-import { Send, Sparkles, Terminal, HelpCircle, Brain, Square } from 'lucide-react'
+import { Send, Code, BarChart3, RefreshCw, Brain, Square, ChevronRight } from 'lucide-react'
 
 // Agent 协作进度内联组件
 function AgentProgressInline() {
@@ -31,31 +31,29 @@ function AgentProgressInline() {
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2">
         <span className="flex h-1.5 w-1.5 relative">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
         </span>
-        <span className="text-[10px] text-zinc-600 font-medium">
-          {agentName && <span className="text-zinc-900">{agentName}</span>}
+        <span className="text-[10px] text-gray-600 font-medium">
+          {agentName && <span className="text-gray-900">{agentName}</span>}
           {agentName && ' · '}
           {currentAction}
         </span>
       </div>
-      {/* 思考摘要 */}
       {latestReasoning && (
-        <div className="text-[9px] text-zinc-400 pl-3.5 italic">
-          💭 {latestReasoning}
+        <div className="text-[9px] text-gray-400 pl-3.5 italic">
+          {latestReasoning}
         </div>
       )}
-      {/* 协作链路 */}
       {agentTraces.length > 1 && (
-        <div className="flex items-center gap-1 text-[8px] text-zinc-400 font-mono pl-3.5">
+        <div className="flex items-center gap-1 text-[8px] text-gray-400 font-mono pl-3.5">
           {agentTraces
             .filter(t => t.action === 'start')
             .slice(-4)
             .map((t, i) => (
               <span key={i} className="flex items-center gap-1">
                 {i > 0 && <span>&rarr;</span>}
-                <span className={t.agent === activeAgent ? 'text-emerald-600' : ''}>{AGENTS[t.agent]?.displayName || t.agent}</span>
+                <span className={t.agent === activeAgent ? 'text-blue-600' : ''}>{AGENTS[t.agent]?.displayName || t.agent}</span>
               </span>
             ))}
         </div>
@@ -91,7 +89,6 @@ export default function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
 
-  // 初始化 WebSocket
   useEffect(() => {
     const ws = new AgentWebSocket(sessionId)
     wsRef.current = ws
@@ -102,7 +99,6 @@ export default function ChatPanel() {
     return () => { ws.disconnect() }
   }, [sessionId])
 
-  // 监听图谱节点点击发送
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail
@@ -183,7 +179,7 @@ export default function ChatPanel() {
         store.addMessage({
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `❌ 错误：${event.error || '未知错误'}`,
+          content: `错误：${event.error || '未知错误'}`,
           timestamp: Date.now(),
         })
         store.setLoading(false)
@@ -211,7 +207,6 @@ export default function ChatPanel() {
     if (wsRef.current?.connected) {
       wsRef.current.send(text)
     } else {
-      // REST 回退
       try {
         const { sendMessage } = await import('../services/api')
         const res = await sendMessage(text, sessionId)
@@ -229,7 +224,7 @@ export default function ChatPanel() {
         addMessage({
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `❌ ${err instanceof Error ? err.message : '请求失败'}`,
+          content: `${err instanceof Error ? err.message : '请求失败'}`,
           timestamp: Date.now(),
         })
       } finally {
@@ -247,34 +242,35 @@ export default function ChatPanel() {
   }
 
   const hints = [
-    { text: '我想学 Python 基础', icon: Terminal },
-    { text: '请对我进行编程能力评估', icon: Sparkles },
-    { text: '帮我规划前端开发学习路径', icon: HelpCircle },
+    { text: '我想学 Python 基础', icon: Code },
+    { text: '请对我进行编程能力评估', icon: BarChart3 },
+    { text: '帮我规划前端开发学习路径', icon: RefreshCw },
   ]
 
   return (
-    <div className="h-full flex flex-col bg-[#fcfcfb] relative overflow-hidden">
+    <div className="h-full flex flex-col bg-white relative overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center max-w-sm mx-auto">
-            <div className="w-12 h-12 rounded-xl bg-white border border-zinc-200 text-zinc-900 flex items-center justify-center mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_8px_24px_-8px_rgba(0,0,0,0.04)]">
-              <Brain className="w-5 h-5" />
+            <div className="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center mb-5">
+              <Brain className="w-7 h-7" />
             </div>
-            <h3 className="text-xs font-bold text-zinc-900 mb-1.5">欢迎使用多智能体智学终端</h3>
-            <p className="text-[10px] text-zinc-400 max-w-xs mb-8 leading-relaxed">
+            <h3 className="text-base font-bold text-gray-900 mb-2">欢迎使用多智能体智学终端</h3>
+            <p className="text-sm text-gray-500 max-w-xs mb-8 leading-relaxed">
               输入你的学习目标，智能体们将协作为你定制学习方案。
             </p>
-            <div className="grid grid-cols-1 gap-2 w-full">
+            <div className="grid grid-cols-1 gap-3 w-full">
               {hints.map((hint) => {
                 const Icon = hint.icon
                 return (
                   <button
                     key={hint.text}
                     onClick={() => setInput(hint.text)}
-                    className="flex items-center gap-3 px-3.5 py-2.5 bg-white border border-zinc-200/80 rounded-xl hover:bg-zinc-50 hover:border-zinc-300 text-[10px] text-zinc-600 hover:text-zinc-900 transition-all text-left shadow-[0_1px_2px_rgba(0,0,0,0.01)] active:scale-[0.99] font-medium"
+                    className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 text-sm text-gray-700 hover:text-gray-900 transition-all text-left active:scale-[0.99]"
                   >
-                    <Icon className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>{hint.text}</span>
+                    <Icon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <span className="flex-1">{hint.text}</span>
+                    <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
                   </button>
                 )
               })}
@@ -294,10 +290,10 @@ export default function ChatPanel() {
 
         {isLoading && !streamingContent && (
           <div className="flex gap-3.5 items-start">
-            <div className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-200/80 flex items-center justify-center text-zinc-400 flex-shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-500 animate-pulse" />
+            <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-500 flex-shrink-0">
+              <Brain className="w-4 h-4 animate-pulse" />
             </div>
-            <div className="px-4 py-2.5 bg-white border border-zinc-200/60 rounded-2xl rounded-tl-sm shadow-[0_1px_3px_rgba(0,0,0,0.01)] min-h-[34px]">
+            <div className="px-4 py-2.5 bg-white border border-gray-200 rounded-2xl rounded-tl-sm shadow-sm min-h-[34px]">
               <AgentProgressInline />
             </div>
           </div>
@@ -306,15 +302,14 @@ export default function ChatPanel() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 断线提示 */}
       {!wsConnected && messages.length > 0 && (
         <div className="px-4 py-1.5 bg-amber-50 border-t border-amber-200 text-[9px] text-amber-700 text-center">
-          ⚠️ 连接已断开，正在重连... (消息将通过备用通道发送)
+          连接已断开，正在重连... (消息将通过备用通道发送)
         </div>
       )}
 
-      <div className="p-4 border-t border-zinc-200/50 bg-[#fcfcfb] relative z-20">
-        <div className="max-w-3xl mx-auto flex gap-2.5 items-center bg-white border border-zinc-200/80 p-1.5 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.01),0_8px_30px_-10px_rgba(0,0,0,0.02)] focus-within:border-zinc-400/80 transition-all duration-200">
+      <div className="p-4 border-t border-gray-100 bg-white relative z-20">
+        <div className="max-w-3xl mx-auto flex gap-2.5 items-center bg-white border border-gray-200 p-1.5 rounded-full shadow-sm focus-within:border-blue-300 transition-all duration-200">
           <textarea
             ref={textareaRef}
             value={input}
@@ -322,7 +317,7 @@ export default function ChatPanel() {
             onKeyDown={handleKeyDown}
             placeholder="与多 Agent 讨论..."
             rows={1}
-            className="flex-1 bg-transparent px-3 py-1.5 resize-none outline-none text-zinc-800 placeholder-zinc-400 text-xs leading-relaxed max-h-[120px] overflow-y-auto"
+            className="flex-1 bg-transparent px-4 py-1.5 resize-none outline-none text-gray-800 placeholder-gray-400 text-sm leading-relaxed max-h-[120px] overflow-y-auto"
           />
           {isLoading ? (
             <button
@@ -332,7 +327,7 @@ export default function ChatPanel() {
                 setActiveAgent(null)
                 clearStreamingContent()
               }}
-              className="w-7 h-7 rounded-lg bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
+              className="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
               title="取消"
             >
               <Square className="w-3 h-3 fill-white" />
@@ -341,14 +336,14 @@ export default function ChatPanel() {
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="w-7 h-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white flex items-center justify-center transition-all disabled:opacity-20 active:scale-95 flex-shrink-0"
+              className="w-8 h-8 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-all disabled:opacity-30 active:scale-95 flex-shrink-0"
             >
-              <Send className="w-3.5 h-3.5" />
+              <Send className="w-4 h-4" />
             </button>
           )}
         </div>
         <div className="text-center mt-1.5">
-          <span className="text-[8px] text-zinc-300">Enter 发送 · Shift+Enter 换行</span>
+          <span className="text-[9px] text-gray-300">Enter 发送 · Shift+Enter 换行</span>
         </div>
       </div>
     </div>

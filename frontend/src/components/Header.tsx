@@ -1,54 +1,45 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore } from '../stores/useAppStore'
 import { Brain, Home } from 'lucide-react'
-import { AGENTS } from '../types'
 
 export default function Header() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { activeAgent, user, logout } = useAppStore()
-
-  // 获取当前活跃 Agent 的信息
-  const activeAgentInfo = activeAgent ? AGENTS[activeAgent] : null
+  const { user, logout } = useAppStore()
 
   return (
-    <header className="h-14 px-5 flex items-center justify-between border-b border-zinc-200/60 bg-white/80 backdrop-blur-md relative z-30 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+    <header className="h-14 px-5 flex items-center justify-between border-b border-gray-200 bg-white relative z-30">
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/')}
           onDoubleClick={() => { localStorage.setItem('demo_mode', 'true'); window.location.reload() }}
           className="flex items-center gap-2 group text-left active:scale-95 transition-transform"
         >
-          <div className="p-1.5 bg-zinc-900 rounded-lg">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
             <Brain className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm font-bold tracking-tight text-zinc-900">
+          <span className="text-sm font-bold tracking-tight text-gray-900">
             智学多Agent系统
           </span>
         </button>
-        
-        {activeAgentInfo && (
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 text-[9px] font-bold bg-emerald-50 border border-emerald-200/50 text-emerald-800 rounded-full">
-            <span className="w-1 h-1 rounded-full bg-emerald-600 animate-pulse" />
-            <span>
-              {activeAgentInfo.displayName} 运行中
-            </span>
-          </div>
-        )}
 
-        <nav className="flex items-center gap-1 ml-4">
+        <nav className="flex items-center gap-2 ml-4">
           <button
             onClick={() => navigate('/learn')}
-            className={`px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all ${
-              location.pathname === '/learn' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'
+            className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all border ${
+              location.pathname === '/learn'
+                ? 'bg-blue-50 text-blue-600 border-blue-300'
+                : 'text-gray-500 border-transparent hover:bg-gray-100'
             }`}
           >
             学习
           </button>
           <button
             onClick={() => navigate('/social')}
-            className={`px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all ${
-              location.pathname === '/social' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'
+            className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all border ${
+              location.pathname === '/social'
+                ? 'bg-blue-50 text-blue-600 border-blue-300'
+                : 'text-gray-500 border-transparent hover:bg-gray-100'
             }`}
           >
             社区
@@ -56,13 +47,13 @@ export default function Header() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {user && (
-          <div className="flex items-center gap-2 mr-2">
-            <span className="text-[10px] text-zinc-500">{user.username}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600">{user.username}</span>
             <button
               onClick={() => { logout(); window.location.href = '/auth' }}
-              className="text-[10px] text-zinc-400 hover:text-zinc-700 transition-colors"
+              className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
             >
               退出
             </button>
@@ -70,7 +61,7 @@ export default function Header() {
         )}
         <button
           onClick={() => navigate('/')}
-          className="p-1.5 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg transition-all active:scale-95"
+          className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-800 hover:border-gray-300 transition-all active:scale-95"
           title="首页"
         >
           <Home className="w-4 h-4" />

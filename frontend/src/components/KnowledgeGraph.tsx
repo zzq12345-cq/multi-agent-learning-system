@@ -4,7 +4,6 @@ import ReactFlow, {
   type Edge,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   Position,
@@ -14,14 +13,14 @@ import 'reactflow/dist/style.css'
 import { useAppStore } from '../stores/useAppStore'
 import { getPythonGraph } from '../services/api'
 import type { LearningPath, NodeStatus } from '../types'
-import { Star, Compass, CheckCircle2, Lock, Play } from 'lucide-react'
+import { Star, Compass, CheckCircle2, Lock } from 'lucide-react'
 
 // 节点状态样式
-const STATUS_STYLES: Record<NodeStatus, { border: string; bg: string; bar: string }> = {
-  locked: { border: '#e4e4e7', bg: '#fafafa', bar: '#d4d4d8' },
-  available: { border: '#a1a1aa', bg: '#ffffff', bar: '#3b82f6' },
-  in_progress: { border: '#10b981', bg: '#ecfdf5', bar: '#10b981' },
-  completed: { border: '#6366f1', bg: '#eef2ff', bar: '#6366f1' },
+const STATUS_STYLES: Record<NodeStatus, { border: string; bg: string; iconColor: string; label: string }> = {
+  locked: { border: '#e5e7eb', bg: '#ffffff', iconColor: '#9ca3af', label: '未解锁' },
+  available: { border: '#3b82f6', bg: '#ffffff', iconColor: '#3b82f6', label: '当前' },
+  in_progress: { border: '#3b82f6', bg: '#eff6ff', iconColor: '#3b82f6', label: '学习中' },
+  completed: { border: '#e5e7eb', bg: '#ffffff', iconColor: '#22c55e', label: '已学' },
 }
 
 function CustomKnowledgeNode({ data }: { data: any }) {
@@ -50,32 +49,43 @@ function CustomKnowledgeNode({ data }: { data: any }) {
   }
 
   const isClickable = status === 'available' || status === 'in_progress'
+  const isCurrent = status === 'available' || status === 'in_progress'
 
   return (
     <div
       onClick={handleClick}
-      className={`relative px-3.5 py-3 rounded-xl text-left w-[170px] shadow-[0_1px_3px_rgba(0,0,0,0.01),0_4px_16px_-8px_rgba(0,0,0,0.02)] group transition-all duration-200 hover:-translate-y-0.5 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
-      style={{ border: `1px solid ${style.border}`, background: style.bg }}
+      className={`relative px-4 py-3 rounded-xl text-left w-[180px] bg-white group transition-all duration-200 hover:-translate-y-0.5 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+      style={{ border: `2px solid ${style.border}` }}
     >
-      <Handle type="target" position={Position.Top} className="!bg-zinc-300 !border-zinc-200 !w-1 !h-1 !opacity-60" />
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl" style={{ background: style.bar }} />
+      <Handle type="target" position={Position.Top} className="!bg-gray-300 !border-gray-200 !w-1.5 !h-1.5 !opacity-60" />
 
-      <div className="flex flex-col gap-1.5 pt-0.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-zinc-900 line-clamp-1 flex-1">{name}</span>
-          {status === 'completed' && <CheckCircle2 className="w-3 h-3 text-indigo-500" />}
-          {status === 'in_progress' && <Play className="w-3 h-3 text-emerald-500 fill-emerald-500" />}
-          {status === 'locked' && <Lock className="w-2.5 h-2.5 text-zinc-300" />}
-        </div>
-        <div className="flex gap-0.5 items-center">
-          {[1, 2, 3].map((star) => (
-            <Star key={star} className={`w-2.5 h-2.5 ${star <= difficulty ? 'text-zinc-700 fill-zinc-700' : 'text-zinc-200'}`} />
-          ))}
-          <span className="text-[8px] text-zinc-400 ml-1 font-mono font-bold">难度 {difficulty}</span>
+      {/* 右上角状态图标 */}
+      <div className="absolute top-2 right-2">
+        {status === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+        {status === 'locked' && <Lock className="w-3.5 h-3.5 text-gray-400" />}
+        {isCurrent && (
+          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs font-bold text-gray-900 line-clamp-1 pr-5">{name}</span>
+        <div className="flex items-center gap-1">
+          <div className="flex gap-0.5">
+            {[1, 2, 3].map((star) => (
+              <Star key={star} className={`w-3 h-3 ${star <= difficulty ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+            ))}
+          </div>
+          <span className={`text-[10px] ml-1 font-medium ${
+            status === 'completed' ? 'text-green-500' :
+            status === 'locked' ? 'text-gray-400' : 'text-blue-500'
+          }`}>
+            {style.label}
+          </span>
         </div>
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-zinc-300 !border-zinc-200 !w-1 !h-1 !opacity-60" />
+      <Handle type="source" position={Position.Bottom} className="!bg-gray-300 !border-gray-200 !w-1.5 !h-1.5 !opacity-60" />
     </div>
   )
 }
@@ -91,7 +101,7 @@ function graphToFlow(path: LearningPath, nodeStates: Map<string, NodeStatus>) {
     return {
       id: node.id,
       type: 'custom',
-      position: { x: col * 200 + 40, y: row * 110 + 40 },
+      position: { x: col * 210 + 40, y: row * 120 + 40 },
       data: { name: node.name, difficulty: node.difficulty, description: node.description, status, nodeId: node.id },
       sourcePosition: Position.Bottom,
       targetPosition: Position.Top,
@@ -104,7 +114,7 @@ function graphToFlow(path: LearningPath, nodeStates: Map<string, NodeStatus>) {
     target: edge.target,
     animated: nodeStates.get(edge.source) === 'in_progress',
     style: {
-      stroke: nodeStates.get(edge.source) === 'completed' ? '#6366f1' : '#d4d4d8',
+      stroke: nodeStates.get(edge.source) === 'completed' ? '#22c55e' : '#d1d5db',
       strokeWidth: 1.5,
     },
   }))
@@ -133,13 +143,13 @@ export default function KnowledgeGraph() {
 
   if (!nodes.length) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#f7f7f5] text-zinc-400 text-xs">
+      <div className="h-full flex items-center justify-center bg-white text-gray-400 text-xs">
         <div className="text-center max-w-[200px]">
-          <div className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center mx-auto mb-4 text-zinc-500 shadow-sm">
-            <Compass className="w-4 h-4" />
+          <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto mb-4 text-blue-500">
+            <Compass className="w-5 h-5" />
           </div>
-          <p className="font-bold text-zinc-800">学习图谱</p>
-          <p className="text-[9px] text-zinc-400 mt-1">规划师将为你生成动态知识图谱</p>
+          <p className="font-bold text-gray-800">学习图谱</p>
+          <p className="text-xs text-gray-400 mt-1">规划师将为你生成动态知识图谱</p>
         </div>
       </div>
     )
@@ -152,17 +162,15 @@ export default function KnowledgeGraph() {
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes} fitView attributionPosition="bottom-left"
       >
-        <Background color="#e4e4e7" gap={20} size={1} />
+        <Background color="#e5e7eb" gap={20} size={1} />
         <Controls showInteractive={false} />
-        <MiniMap nodeColor="#52525b" maskColor="rgba(0,0,0,0.03)" style={{ height: 70, width: 100 }} />
       </ReactFlow>
 
       {/* 图例 */}
-      <div className="absolute bottom-3 left-3 flex gap-3 text-[8px] text-zinc-500 bg-white/80 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-zinc-200/60">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-zinc-200" />未解锁</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-blue-400" />可学习</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-400" />学习中</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-400" />已完成</span>
+      <div className="absolute bottom-3 left-3 flex gap-4 text-[10px] text-gray-600 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" />当前节点</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500" />已学</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-300" />未解锁</span>
       </div>
     </div>
   )

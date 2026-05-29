@@ -3,7 +3,7 @@ import { useAppStore } from '../stores/useAppStore'
 import AgentFlowViz from './AgentFlowViz'
 import DemoMode from './DemoMode'
 import {
-  Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck, CheckCircle2,
+  Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck,
 } from 'lucide-react'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -15,14 +15,23 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   assessor: ShieldCheck,
 }
 
+const AGENT_DESCRIPTIONS: Record<string, string> = {
+  coordinator: '统筹全局，分配任务，协同各智能体工作。',
+  profiler: '分析学习者特征，构建精准学习画像。',
+  planner: '制定学习计划，规划最佳学习路径。',
+  generator: '生成学习内容与练习，提供个性化资源。',
+  tutor: '答疑解惑，提供指导与建议。',
+  assessor: '评估学习效果，提供反馈与改进建议。',
+}
+
 export default function AgentPanel() {
-  const { activeAgent, agentOutputs, agentTraces } = useAppStore()
+  const { activeAgent } = useAppStore()
   const agents = Object.values(AGENTS)
 
   return (
-    <div className="h-full flex flex-col bg-white/20 border-r border-zinc-200/60 backdrop-blur-md">
-      <div className="p-4 border-b border-zinc-200/50">
-        <h3 className="text-[10px] font-bold tracking-wider uppercase text-zinc-400">
+    <div className="h-full flex flex-col bg-white border-r border-gray-200">
+      <div className="p-4 border-b border-gray-100">
+        <h3 className="text-xs font-bold text-gray-900">
           Agent 协作面板
         </h3>
       </div>
@@ -35,71 +44,43 @@ export default function AgentPanel() {
         <AgentFlowViz />
       </div>
 
-      {/* 协作轨迹时间线 */}
-      {agentTraces.length > 0 && (
-        <div className="px-4 pt-3">
-          <div className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
-            协作轨迹
-          </div>
-          <div className="space-y-1 max-h-20 overflow-y-auto">
-            {agentTraces.slice(-8).map((trace, i) => (
-              <div key={i} className="flex items-center gap-1.5 text-[8px]">
-                <span className={`w-1 h-1 rounded-full flex-shrink-0 ${
-                  trace.action === 'start' ? 'bg-emerald-400' :
-                  trace.action === 'route' ? 'bg-blue-400' : 'bg-zinc-300'
-                }`} />
-                <span className="text-zinc-500 font-mono truncate">
-                  {trace.action === 'route'
-                    ? trace.detail
-                    : `${AGENTS[trace.agent]?.displayName || trace.agent} ${trace.action === 'start' ? '启动' : '完成'}`
-                  }
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Agent 列表 */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {agents.map((agent) => {
           const isActive = activeAgent === agent.name
-          const output = agentOutputs[agent.name]
           const Icon = ICON_MAP[agent.name] || Cpu
+          const description = AGENT_DESCRIPTIONS[agent.name] || agent.description
 
           return (
             <div
               key={agent.name}
-              className={`p-2.5 rounded-xl border transition-all duration-200 ${
+              className={`p-3 rounded-xl transition-all duration-200 ${
                 isActive
-                  ? 'border-zinc-900 bg-zinc-50 shadow-[0_2px_8px_rgba(0,0,0,0.03)]'
-                  : output
-                    ? 'border-zinc-200/80 bg-zinc-50/30'
-                    : 'border-zinc-200/50 bg-white'
+                  ? 'bg-blue-50 border-l-[3px] border-l-blue-500 border-y border-r border-y-blue-100 border-r-blue-100'
+                  : 'bg-white border border-gray-100 hover:bg-gray-50'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-md border flex items-center justify-center ${
-                  isActive ? 'border-zinc-300 bg-white text-zinc-900'
-                    : output ? 'border-zinc-200 bg-zinc-50 text-zinc-500'
-                    : 'border-zinc-200/60 text-zinc-400'
+              <div className="flex items-start gap-2.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  isActive ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-500'
                 }`}>
-                  <Icon className="w-3 h-3" />
+                  <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-bold ${isActive ? 'text-zinc-900' : 'text-zinc-700'}`}>
+                    <span className={`text-xs font-bold ${isActive ? 'text-gray-900' : 'text-gray-700'}`}>
                       {agent.displayName}
                     </span>
                     {isActive && (
-                      <span className="flex h-1.5 w-1.5 relative">
-                        <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-500 opacity-75" />
-                        <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-600" />
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute h-full w-full rounded-full bg-blue-400 opacity-75" />
+                        <span className="relative rounded-full h-2 w-2 bg-blue-500" />
                       </span>
                     )}
-                    {output && !isActive && <CheckCircle2 className="w-3 h-3 text-zinc-400" />}
                   </div>
-                  {output && <div className="text-[8px] text-zinc-500 mt-0.5 truncate">{output}</div>}
+                  <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">
+                    {description}
+                  </p>
                 </div>
               </div>
             </div>

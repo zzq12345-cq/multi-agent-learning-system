@@ -15,7 +15,7 @@ export default function LearningPage() {
   const [showRightPanel, setShowRightPanel] = useState(false)
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
       <Header />
 
       <div className="flex-1 flex overflow-hidden relative">
@@ -29,8 +29,8 @@ export default function LearningPage() {
           <div className="lg:hidden fixed inset-0 z-50 flex">
             <div className="w-64 bg-white shadow-xl h-full overflow-y-auto">
               <div className="flex justify-end p-2">
-                <button onClick={() => setShowLeftPanel(false)} className="p-1 hover:bg-zinc-100 rounded-lg">
-                  <X className="w-4 h-4 text-zinc-500" />
+                <button onClick={() => setShowLeftPanel(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                  <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
               <AgentPanel />
@@ -40,19 +40,19 @@ export default function LearningPage() {
         )}
 
         {/* 中间：对话 */}
-        <div className="flex-1 min-w-0 border-r border-zinc-200/60">
+        <div className="flex-1 min-w-0 border-r border-gray-200">
           {/* 移动端顶部工具栏 */}
-          <div className="lg:hidden flex items-center justify-between px-3 py-2 border-b border-zinc-200/50 bg-white/80">
+          <div className="lg:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white">
             <button
               onClick={() => setShowLeftPanel(true)}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-500"
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
             >
               <PanelLeft className="w-4 h-4" />
             </button>
-            <span className="text-[10px] text-zinc-400 font-medium">对话</span>
+            <span className="text-xs text-gray-400 font-medium">对话</span>
             <button
               onClick={() => setShowRightPanel(true)}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-500"
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
             >
               <PanelRight className="w-4 h-4" />
             </button>
@@ -61,34 +61,34 @@ export default function LearningPage() {
         </div>
 
         {/* 右侧：图谱/进度 — 桌面端常驻 */}
-        <div className="hidden lg:flex w-96 flex-shrink-0 flex-col">
+        <div className="hidden lg:flex w-96 flex-shrink-0 flex-col bg-white">
           <SubjectSelector />
-          <div className="flex border-b border-zinc-200/50 bg-white/50">
+          <div className="flex border-b border-gray-200 bg-white">
             <button
               onClick={() => setRightPanel('graph')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-medium transition-all ${
-                rightPanel === 'graph' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-all ${
+                rightPanel === 'graph' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              <Map className="w-3 h-3" />
+              <Map className="w-3.5 h-3.5" />
               知识图谱
             </button>
             <button
               onClick={() => setRightPanel('progress')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-medium transition-all ${
-                rightPanel === 'progress' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-all ${
+                rightPanel === 'progress' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              <BarChart3 className="w-3 h-3" />
+              <BarChart3 className="w-3.5 h-3.5" />
               学习进度
             </button>
             <button
               onClick={() => setRightPanel('docs')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-medium transition-all ${
-                rightPanel === 'docs' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-all ${
+                rightPanel === 'docs' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              <FileText className="w-3 h-3" />
+              <FileText className="w-3.5 h-3.5" />
               资料
             </button>
           </div>
@@ -102,27 +102,27 @@ export default function LearningPage() {
           <div className="lg:hidden fixed inset-0 z-50 flex flex-row-reverse">
             <div className="w-80 bg-white shadow-xl h-full overflow-y-auto flex flex-col">
               <div className="flex justify-start p-2">
-                <button onClick={() => setShowRightPanel(false)} className="p-1 hover:bg-zinc-100 rounded-lg">
-                  <X className="w-4 h-4 text-zinc-500" />
+                <button onClick={() => setShowRightPanel(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                  <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
               <SubjectSelector />
-              <div className="flex border-b border-zinc-200/50">
+              <div className="flex border-b border-gray-200">
                 <button
                   onClick={() => setRightPanel('graph')}
-                  className={`flex-1 py-2 text-[10px] font-medium ${rightPanel === 'graph' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400'}`}
+                  className={`flex-1 py-2 text-xs font-medium ${rightPanel === 'graph' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-400'}`}
                 >
                   知识图谱
                 </button>
                 <button
                   onClick={() => setRightPanel('progress')}
-                  className={`flex-1 py-2 text-[10px] font-medium ${rightPanel === 'progress' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400'}`}
+                  className={`flex-1 py-2 text-xs font-medium ${rightPanel === 'progress' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-400'}`}
                 >
                   学习进度
                 </button>
                 <button
                   onClick={() => setRightPanel('docs')}
-                  className={`flex-1 py-2 text-[10px] font-medium ${rightPanel === 'docs' ? 'text-zinc-900 border-b-2 border-zinc-900' : 'text-zinc-400'}`}
+                  className={`flex-1 py-2 text-xs font-medium ${rightPanel === 'docs' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-400'}`}
                 >
                   资料
                 </button>
