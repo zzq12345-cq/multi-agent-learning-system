@@ -92,7 +92,7 @@ export default function LearningPage() {
               资料
             </button>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-h-0">
             {rightPanel === 'graph' ? <KnowledgeGraph /> : rightPanel === 'progress' ? <ProgressDashboard /> : <DocUpload />}
           </div>
         </div>
