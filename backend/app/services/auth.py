@@ -1,4 +1,8 @@
-"""用户认证服务 — JWT + 密码哈希"""
+"""用户认证服务 — JWT + 密码哈希
+
+TODO: 迁移到 SQLAlchemy User 模型（当前使用 JSON 文件作为过渡方案）
+数据库 schema 已在 app/models/models.py 中定义
+"""
 
 import os
 import uuid

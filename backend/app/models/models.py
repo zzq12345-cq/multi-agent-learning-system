@@ -2,8 +2,7 @@
 
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, Float, DateTime, Text, JSON, ForeignKey, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -99,7 +98,7 @@ class Message(Base):
     role = Column(String(20), nullable=False)  # user/assistant/system/agent
     agent_name = Column(String(50))  # 哪个 Agent 产生的
     content = Column(Text, nullable=False)
-    metadata = Column(JSON, default=dict)  # Agent 协作元数据
+    meta = Column("metadata", JSON, default=dict)  # Agent 协作元数据
     created_at = Column(DateTime, default=datetime.utcnow)
 
     conversation = relationship("Conversation", back_populates="messages")
@@ -115,5 +114,5 @@ class GeneratedResource(Base):
     title = Column(String(200))
     content = Column(Text, nullable=False)
     difficulty = Column(Integer, default=1)  # 1-5
-    metadata = Column(JSON, default=dict)
+    meta = Column("metadata", JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)

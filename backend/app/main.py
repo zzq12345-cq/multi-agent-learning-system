@@ -28,6 +28,11 @@ async def lifespan(app: FastAPI):
     logger.add("./data/app.log", rotation="10 MB", retention="7 days", level="DEBUG")
     logger.info("应用启动")
 
+    # 初始化数据库
+    from app.db.database import init_db
+    await init_db()
+    logger.info("数据库初始化完成")
+
     yield
     logger.info("应用关闭")
 
