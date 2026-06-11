@@ -3,7 +3,7 @@
 import asyncio
 import time
 import uuid
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from loguru import logger
 from langchain_core.messages import HumanMessage
@@ -58,7 +58,16 @@ async def send_message(req: ChatRequest):
     }
     state["messages"] = list(state["messages"]) + [HumanMessage(content=req.message)]
 
-    result = await agent_graph.ainvoke(state)
+    try:
+        async with asyncio.timeout(AGENT_TIMEOUT_SECONDS):
+            result = await agent_graph.ainvoke(state)
+    except asyncio.TimeoutError:
+        logger.warning(f"[{session_id}] REST /send 执行超时（{AGENT_TIMEOUT_SECONDS}s）")
+        raise HTTPException(504, "处理超时，请重试或简化问题")
+    except Exception as e:
+        logger.error(f"[{session_id}] REST /send 执行失败: {e}")
+        raise HTTPException(503, "服务处理异常，请稍后重试")
+
     sessions[session_id] = result
     save_session(session_id, result)
 
@@ -100,13 +109,19 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                 del sessions[oldest]
             sessions[session_id] = _create_initial_state(session_id)
 
+    # 绑定真实用户 ID（带 token 连接时），历史会话按用户归属
+    if token and user_id:
+        sessions[session_id]["user_id"] = user_id
+
+    # 图执行期间收到的普通消息暂存于此，待本轮结束后处理
+    pending_messages: list[dict] = []
     try:
         while True:
-            raw = await websocket.receive_json()
+            raw = pending_messages.pop(0) if pending_messages else await websocket.receive_json()
 
-            # 检查是否是取消请求
+            # 空闲状态收到取消请求（执行已结束），直接忽略
             if raw.get("type") == "cancel":
-                logger.info(f"[{session_id}] 用户取消执行")
+                logger.debug(f"[{session_id}] 当前无执行任务，忽略取消请求")
                 continue
 
             message = raw.get("message", "")
@@ -140,73 +155,42 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             })
 
             result = None
-            current_agent = "coordinator"
+            tracker = {"agent": "coordinator"}
+            cancelled = False
 
             try:
                 async with asyncio.timeout(AGENT_TIMEOUT_SECONDS):
-                    async for event in agent_graph.astream_events(state, version="v2"):
-                        kind = event.get("event", "")
-                        name = event.get("name", "")
-
-                        # Agent 节点开始
-                        if kind == "on_chain_start" and name in (
-                            "profiler", "planner", "generator", "tutor", "assessor"
-                        ):
-                            await websocket.send_json({
-                                "type": "agent_end", "agent": current_agent, "timestamp": _now(),
-                            })
-                            # 从 coordinator 输出中获取路由理由
-                            coordinator_output = state.get("agent_outputs", {}).get("coordinator", "")
-                            route_reasons = {
-                                "profiler": "检测到需要评估学习水平",
-                                "planner": "准备规划个性化学习路径",
-                                "generator": "开始生成定制学习资源",
-                                "tutor": "进入答疑解惑模式",
-                                "assessor": "启动学习效果评估",
-                            }
-                            reasoning = coordinator_output if coordinator_output and "意图识别" in coordinator_output else route_reasons.get(name, "")
-                            await websocket.send_json({
-                                "type": "route",
-                                "route_from": current_agent,
-                                "route_to": name,
-                                "reasoning": reasoning,
-                                "timestamp": _now(),
-                            })
-                            current_agent = name
-                            await websocket.send_json({
-                                "type": "agent_start", "agent": name, "timestamp": _now(),
-                            })
-                            logger.info(f"[{session_id}] Agent 路由: {current_agent} → {name}")
-
-                        # 流式 token（只推送适合直接展示的 Agent 输出）
-                        # coordinator 输出是路由决策，planner/assessor 输出是 JSON 需要后处理
-                        if kind == "on_chat_model_stream" and current_agent in (
-                            "tutor", "generator", "profiler"
-                        ):
-                            chunk = event.get("data", {}).get("chunk")
-                            if chunk and hasattr(chunk, "content") and chunk.content:
-                                await websocket.send_json({
-                                    "type": "token",
-                                    "agent": current_agent,
-                                    "content": chunk.content,
-                                    "timestamp": _now(),
-                                })
-
-                        # 图执行结束
-                        if kind == "on_chain_end" and name == "LangGraph":
-                            result = event.get("data", {}).get("output", {})
-
+                    cancelled, result = await _run_graph_with_cancel(
+                        websocket, session_id, state, tracker, pending_messages,
+                    )
             except asyncio.TimeoutError:
                 logger.warning(f"[{session_id}] Agent 执行超时（{AGENT_TIMEOUT_SECONDS}s）")
+                await _send_abort_events(
+                    websocket, tracker["agent"], "处理超时，请重试或简化问题",
+                )
+                continue
+            except WebSocketDisconnect:
+                raise
+            except Exception as e:
+                # 单条消息执行失败：回错误事件并复位前端状态，连接保持
+                logger.error(f"[{session_id}] Agent 执行失败: {e}")
+                await _send_abort_events(
+                    websocket, tracker["agent"], "服务处理异常，请重试",
+                )
+                continue
+
+            if cancelled:
+                logger.info(f"[{session_id}] 用户取消执行")
                 await websocket.send_json({
-                    "type": "error",
-                    "error": "处理超时，请重试或简化问题",
-                    "timestamp": _now(),
+                    "type": "agent_end", "agent": tracker["agent"], "timestamp": _now(),
+                })
+                await websocket.send_json({
+                    "type": "system_notice", "content": "已取消本次请求", "timestamp": _now(),
                 })
                 continue
 
             await websocket.send_json({
-                "type": "agent_end", "agent": current_agent, "timestamp": _now(),
+                "type": "agent_end", "agent": tracker["agent"], "timestamp": _now(),
             })
 
             if result:
@@ -292,6 +276,123 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             })
         except Exception:
             pass
+
+
+def _consume_task_exception(task: asyncio.Task) -> None:
+    """提前消费任务异常，避免取消路径下产生 exception never retrieved 告警"""
+    if not task.cancelled():
+        task.exception()
+
+
+async def _run_graph_with_cancel(
+    websocket: WebSocket,
+    session_id: str,
+    state: dict,
+    tracker: dict,
+    pending_messages: list[dict],
+) -> tuple[bool, dict | None]:
+    """图执行放入独立 Task，并发监听 cancel 消息实现真实取消
+
+    返回 (是否被取消, 图最终输出)；图执行异常原样抛出，由调用方处理。
+    """
+    graph_task = asyncio.create_task(
+        _stream_graph_events(websocket, session_id, state, tracker)
+    )
+    graph_task.add_done_callback(_consume_task_exception)
+    recv_task: asyncio.Task | None = None
+    try:
+        while True:
+            recv_task = asyncio.create_task(websocket.receive_json())
+            await asyncio.wait(
+                {graph_task, recv_task}, return_when=asyncio.FIRST_COMPLETED,
+            )
+            if recv_task.done():
+                raw = recv_task.result()  # 客户端断开时抛出 WebSocketDisconnect
+                if raw.get("type") == "cancel":
+                    # 图已在同一 tick 完成：结果有效，保留并正常走完（落盘）
+                    if graph_task.done():
+                        return False, graph_task.result()
+                    # 真正取消：同时丢弃执行期间排队的消息，避免取消后立即被执行
+                    pending_messages.clear()
+                    return True, None
+                # 执行期间收到的普通消息暂存，待本轮结束后处理
+                pending_messages.append(raw)
+            if graph_task.done():
+                return False, graph_task.result()
+    finally:
+        for task in (graph_task, recv_task):
+            if task is not None and not task.done():
+                task.cancel()
+
+
+async def _stream_graph_events(
+    websocket: WebSocket, session_id: str, state: dict, tracker: dict,
+) -> dict | None:
+    """消费图事件流并推送 WS 事件，返回图最终输出"""
+    result = None
+    async for event in agent_graph.astream_events(state, version="v2"):
+        kind = event.get("event", "")
+        name = event.get("name", "")
+
+        # Agent 节点开始
+        if kind == "on_chain_start" and name in (
+            "profiler", "planner", "generator", "tutor", "assessor"
+        ):
+            await websocket.send_json({
+                "type": "agent_end", "agent": tracker["agent"], "timestamp": _now(),
+            })
+            # 从 coordinator 输出中获取路由理由
+            coordinator_output = state.get("agent_outputs", {}).get("coordinator", "")
+            route_reasons = {
+                "profiler": "检测到需要评估学习水平",
+                "planner": "准备规划个性化学习路径",
+                "generator": "开始生成定制学习资源",
+                "tutor": "进入答疑解惑模式",
+                "assessor": "启动学习效果评估",
+            }
+            reasoning = coordinator_output if coordinator_output and "意图识别" in coordinator_output else route_reasons.get(name, "")
+            await websocket.send_json({
+                "type": "route",
+                "route_from": tracker["agent"],
+                "route_to": name,
+                "reasoning": reasoning,
+                "timestamp": _now(),
+            })
+            tracker["agent"] = name
+            await websocket.send_json({
+                "type": "agent_start", "agent": name, "timestamp": _now(),
+            })
+            logger.info(f"[{session_id}] Agent 路由: {tracker['agent']} → {name}")
+
+        # 流式 token（只推送适合直接展示的 Agent 输出）
+        # coordinator 输出是路由决策，planner/assessor 输出是 JSON 需要后处理
+        if kind == "on_chat_model_stream" and tracker["agent"] in (
+            "tutor", "generator", "profiler"
+        ):
+            chunk = event.get("data", {}).get("chunk")
+            if chunk and hasattr(chunk, "content") and chunk.content:
+                await websocket.send_json({
+                    "type": "token",
+                    "agent": tracker["agent"],
+                    "content": chunk.content,
+                    "timestamp": _now(),
+                })
+
+        # 图执行结束
+        if kind == "on_chain_end" and name == "LangGraph":
+            result = event.get("data", {}).get("output", {})
+
+    return result
+
+
+async def _send_abort_events(websocket: WebSocket, agent: str, error_msg: str) -> None:
+    """执行中止时补发 agent_end + error 事件，复位前端状态"""
+    await websocket.send_json({
+        "type": "agent_end", "agent": agent, "timestamp": _now(),
+    })
+    await websocket.send_json({
+        "type": "error", "error": error_msg, "timestamp": _now(),
+    })
 
 
 @router.get("/sessions/{session_id}")

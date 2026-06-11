@@ -8,6 +8,7 @@ from app.services.mastery import (
     get_weak_points,
     get_review_suggestions,
     init_mastery_data,
+    merge_mastery_data,
     record_assessment,
 )
 
@@ -70,3 +71,31 @@ def test_record_assessment():
     assert updated["n1"]["mastery"] > 0
     assert updated["n1"]["attempts"] == 1
     assert len(updated["n1"]["history"]) == 1
+
+
+def test_merge_mastery_data_keeps_history():
+    old_nodes = [{"id": "a", "name": "变量"}, {"id": "removed", "name": "旧主题"}]
+    path = {"nodes": [{"id": "a2", "name": "变量"}, {"id": "b", "name": "循环"}]}
+    old = {
+        "a": {"mastery": 88.0, "attempts": 2, "last_review_ts": 123.0,
+              "history": [{"score": 88, "timestamp": 123.0}]},
+        "removed": {"mastery": 50, "attempts": 1, "last_review_ts": 1.0, "history": []},
+    }
+    merged = merge_mastery_data(path, old, old_nodes)
+    assert merged["a2"]["mastery"] == 88.0  # 同名节点保留历史（id 变化不影响）
+    assert merged["a2"]["attempts"] == 2
+    assert merged["b"]["mastery"] == 0  # 新节点初始化
+    assert merged["b"]["attempts"] == 0
+    assert "removed" not in merged  # 新路径中名称不存在的旧节点被丢弃
+
+
+def test_merge_mastery_data_cross_topic_no_grafting():
+    # 回归：跨主题重新规划时 LLM 生成的 id（node_1 风格）重合，旧掌握度不得嫁接
+    old_nodes = [{"id": "node_1", "name": "Python 基础"}]
+    old = {"node_1": {"mastery": 90.0, "attempts": 3, "last_review_ts": 1.0,
+                      "history": [{"score": 90, "timestamp": 1.0}]}}
+    path = {"nodes": [{"id": "node_1", "name": "HTML 入门"}]}
+    merged = merge_mastery_data(path, old, old_nodes)
+    assert merged["node_1"]["mastery"] == 0
+    assert merged["node_1"]["attempts"] == 0
+    assert merged["node_1"]["history"] == []

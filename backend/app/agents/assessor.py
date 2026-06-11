@@ -4,7 +4,7 @@ import json
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
-from app.services.learning_engine import complete_node
+from app.services.learning_engine import complete_node, find_node_by_name, select_current_node
 from app.services.mastery import record_assessment
 from app.services.memory import build_context_summary, get_conversation_window
 
@@ -41,6 +41,7 @@ ASSESSOR_PROMPT = """你是一个学习评估专家（Assessor Agent）。
   "score": 80,
   "correct_count": 4,
   "total_count": 5,
+  "knowledge_point": "本次评估对应的知识点名称（与学习路径节点名一致）",
   "feedback": "总体反馈",
   "weak_points": ["薄弱知识点"],
   "suggestions": ["学习建议"]
@@ -57,7 +58,16 @@ async def assessor_node(state: AgentState) -> dict:
     llm = get_llm(config, temperature=0.5)
 
     profile = state.get("user_profile", {})
+    learning_path = state.get("learning_path", {})
+    node_states = state.get("node_states", {})
+    mastery_data = state.get("mastery_data", {})
     current_node = state.get("current_node", {})
+
+    # 用户消息中显式提到某个知识点时，切换当前节点（locked 节点除外）
+    user_query = state["messages"][-1].content if state["messages"] else ""
+    matched = find_node_by_name(user_query, learning_path, node_states)
+    if matched:
+        current_node = matched
 
     context_summary = build_context_summary(state)
     system_msg = SystemMessage(content=ASSESSOR_PROMPT.format(
@@ -78,22 +88,23 @@ async def assessor_node(state: AgentState) -> dict:
     else:
         formatted = content
 
-    # 更新节点状态
-    node_states = state.get("node_states", {})
-    current = state.get("current_node", {})
-    learning_path = state.get("learning_path", {})
-    mastery_data = state.get("mastery_data", {})
-
-    if result and "score" in result and current and current.get("id"):
-        score = result.get("score", 0)
-        mastery_data = record_assessment(mastery_data, current["id"], score)
-        if score >= 60:  # 60 分及格，标记完成
-            node_states = complete_node(current["id"], score, learning_path, node_states)
+    # 评分后更新掌握度与节点状态
+    if result and "score" in result:
+        if not current_node.get("id"):
+            current_node = _resolve_assessment_node(result, learning_path, node_states)
+        if current_node.get("id"):
+            score = result.get("score", 0)
+            mastery_data = record_assessment(mastery_data, current_node["id"], score)
+            if score >= 60:  # 60 分及格，标记完成并解锁后续节点
+                node_states = complete_node(current_node["id"], score, learning_path, node_states)
+                # 推进到下一个可学节点
+                current_node = select_current_node(learning_path, node_states)
 
     return {
         "messages": [AIMessage(content=formatted, name="assessor")],
         "node_states": node_states,
         "mastery_data": mastery_data,
+        "current_node": current_node,
         "next_agent": END,
         "agent_outputs": {
             **state.get("agent_outputs", {}),
@@ -104,6 +115,22 @@ async def assessor_node(state: AgentState) -> dict:
             "last_assessment": result,
         },
     }
+
+
+def _resolve_assessment_node(result: dict, learning_path: dict, node_states: dict) -> dict:
+    """评分兜底归因：优先按 knowledge_point 名称匹配（排除 locked 节点）
+
+    名称无法匹配任何节点时，仅当首个可学节点确为 in_progress 才归因到它，
+    避免把综合测评分数错误记到尚未开始的节点并连带其完成与级联解锁。
+    """
+    matched = find_node_by_name(result.get("knowledge_point", ""), learning_path, node_states)
+    if matched.get("id"):
+        return matched
+    candidate = select_current_node(learning_path, node_states)
+    cid = candidate.get("id")
+    if cid and node_states.get(cid, {}).get("status") == "in_progress":
+        return candidate
+    return {}
 
 
 def _try_parse_json(content: str) -> dict | None:

@@ -1,6 +1,7 @@
 """学科管理 API"""
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, Header
+from loguru import logger
 from app.services.graph_store import (
     list_all_graphs, get_graph, delete_graph, validate_domain,
 )
@@ -10,6 +11,20 @@ from app.services.doc_parser import (
 from app.services.auth import decode_token
 
 router = APIRouter(prefix="/api/subjects", tags=["subjects"])
+
+
+async def _rebuild_rag_index():
+    """重建 RAG 索引，使文档变更立即可检索
+
+    刻意在事件循环内同步执行 reload()，不放入线程：上传/删除是低频操作，
+    demo 规模重建仅毫秒级；单线程下与 rag.search() 天然互斥，
+    彻底消除工作线程清空 chunks 时 search 读到空索引的竞争（IndexError）。
+    """
+    try:
+        from app.services.rag import get_rag
+        get_rag().reload()
+    except Exception as e:
+        logger.warning(f"RAG 索引重建失败: {e}")
 
 
 def _get_current_user(authorization: str = Header(default="")) -> str:
@@ -70,13 +85,8 @@ async def upload_doc(
 
     save_doc_to_domain(domain, file.filename or "document.md", text)
 
-    # 触发 RAG 重新加载
-    try:
-        from app.services.rag import get_rag
-        rag = get_rag()
-        rag._loaded = False
-    except Exception:
-        pass
+    # 强制重建 RAG 索引，新文档立即可检索
+    await _rebuild_rag_index()
 
     return {"status": "ok", "filename": file.filename, "text_length": len(text)}
 
@@ -97,6 +107,8 @@ async def remove_doc(
     """删除学科文档"""
     if not delete_domain_doc(domain, filename):
         raise HTTPException(404, "文档不存在")
+    # 强制重建 RAG 索引，移除已删除文档的内容
+    await _rebuild_rag_index()
     return {"status": "ok"}
 
 

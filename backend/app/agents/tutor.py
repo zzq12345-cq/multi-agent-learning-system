@@ -4,6 +4,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.memory import build_context_summary, get_conversation_window
+from app.services.learning_engine import find_node_by_name
 from app.services.rag import search_knowledge
 
 TUTOR_PROMPT = """你是一个耐心且专业的 Python 学习导师（Tutor Agent）。
@@ -37,6 +38,12 @@ async def tutor_node(state: AgentState) -> dict:
     current_node = state.get("current_node", {})
     learning_path = state.get("learning_path", {})
 
+    # 用户消息中显式提到某个知识点时，切换当前节点（locked 节点除外）
+    user_query = state["messages"][-1].content if state["messages"] else ""
+    matched = find_node_by_name(user_query, learning_path, state.get("node_states", {}))
+    if matched:
+        current_node = matched
+
     context_parts = []
     if current_node:
         context_parts.append(f"当前知识点: {current_node.get('name', '未知')}")
@@ -46,7 +53,6 @@ async def tutor_node(state: AgentState) -> dict:
     context_summary = build_context_summary(state)
 
     # RAG 检索相关教学资料
-    user_query = state["messages"][-1].content if state["messages"] else ""
     domain = state.get("learning_path", {}).get("domain")
     reference = search_knowledge(user_query, top_k=2, domain=domain)
 
@@ -69,6 +75,7 @@ async def tutor_node(state: AgentState) -> dict:
 
     return {
         "messages": [AIMessage(content=response.content, name="tutor")],
+        "current_node": current_node,
         "next_agent": END,
         "metadata": {
             **state.get("metadata", {}),

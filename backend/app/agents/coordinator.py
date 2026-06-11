@@ -33,11 +33,46 @@ COORDINATOR_PROMPT = """你是一个智能学习系统的协调者（Coordinator
 请只回复一个 Agent 名称（profiler/planner/generator/tutor/assessor），
 或者如果是简单对话直接回复用户（以 REPLY: 开头）。"""
 
+# 路由表：Agent 名称 → 节点 ID
+AGENT_MAP = {
+    "profiler": PROFILER,
+    "planner": PLANNER,
+    "generator": GENERATOR,
+    "tutor": TUTOR,
+    "assessor": ASSESSOR,
+}
+
+# 精确匹配时容忍的包裹字符（引号、标点、Markdown 符号等）
+_WRAP_CHARS = "\"'`*#·「」『』（）()【】[]。.，,：:？?！! \n\r\t"
+
+
+def _resolve_route(content: str) -> str | None:
+    """解析路由目标（入参须为小写文本）：精确匹配优先；子串匹配仅唯一命中时生效，避免误路由"""
+    if "reply:" in content:
+        return None
+    exact = content.strip(_WRAP_CHARS)
+    if exact in AGENT_MAP:
+        return AGENT_MAP[exact]
+    # 子串匹配：命中多个 Agent 名时视为普通回复，不强行路由
+    hits = [name for name in AGENT_MAP if name in content]
+    if len(hits) == 1:
+        return AGENT_MAP[hits[0]]
+    return None
+
+
+def _extract_reply(raw_content: str) -> str:
+    """提取直接回复文本：保留原文大小写，仅剥离 REPLY: 前缀"""
+    idx = raw_content.lower().find("reply:")
+    if idx >= 0:
+        return raw_content[idx + len("reply:"):].strip()
+    return raw_content
+
 
 async def coordinator_node(state: AgentState) -> dict:
     """协调者节点：识别意图并路由"""
     config = LLMConfig(**state.get("llm_config", {}))
-    llm = get_llm(config, temperature=0.3)
+    # 意图分类任务，temperature 设 0 保证路由稳定
+    llm = get_llm(config, temperature=0)
 
     profile_info = state.get("user_profile", {})
     path_info = state.get("learning_path", {})
@@ -66,32 +101,23 @@ async def coordinator_node(state: AgentState) -> dict:
 
     recent_messages = get_conversation_window(state["messages"], max_recent=3, max_total=6)
     response = await llm.ainvoke([system_msg] + list(recent_messages))
-    content = response.content.strip().lower()
+    # 保留原文用于直接回复，仅用小写副本做路由判定
+    raw_content = response.content.strip()
 
-    # 解析路由决策
-    agent_map = {
-        "profiler": PROFILER,
-        "planner": PLANNER,
-        "generator": GENERATOR,
-        "tutor": TUTOR,
-        "assessor": ASSESSOR,
-    }
-
-    for name, agent_id in agent_map.items():
-        if name in content and "reply:" not in content:
-            return {
-                "current_intent": name,
-                "next_agent": agent_id,
-                "agent_outputs": {
-                    **state.get("agent_outputs", {}),
-                    "coordinator": f"意图识别：{content.strip()[:80]}",
-                },
-            }
+    target = _resolve_route(raw_content.lower())
+    if target:
+        return {
+            "current_intent": target,
+            "next_agent": target,
+            "agent_outputs": {
+                **state.get("agent_outputs", {}),
+                "coordinator": f"意图识别：{raw_content[:80]}",
+            },
+        }
 
     # 直接回复
-    reply = content.replace("reply:", "").strip() if "reply:" in content else content
     return {
-        "messages": [AIMessage(content=reply, name="coordinator")],
+        "messages": [AIMessage(content=_extract_reply(raw_content), name="coordinator")],
         "next_agent": END,
         "agent_outputs": {
             **state.get("agent_outputs", {}),

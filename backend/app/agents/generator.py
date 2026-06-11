@@ -3,7 +3,7 @@
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
-from app.services.learning_engine import start_node
+from app.services.learning_engine import find_node_by_name, select_current_node, start_node
 from app.services.memory import build_context_summary, get_conversation_window
 from app.services.rag import search_knowledge
 
@@ -39,6 +39,15 @@ async def generator_node(state: AgentState) -> dict:
     profile = state.get("user_profile", {})
     current_node = state.get("current_node", {})
     learning_path = state.get("learning_path", {})
+    node_states = state.get("node_states", {})
+
+    # 解析当前知识点：用户指定 > 已有 current_node > 路径中第一个可学节点
+    user_query = state["messages"][-1].content if state["messages"] else ""
+    matched = find_node_by_name(user_query, learning_path)
+    if matched:
+        current_node = matched
+    elif not current_node.get("id"):
+        current_node = select_current_node(learning_path, node_states)
 
     context = ""
     if learning_path:
@@ -48,7 +57,6 @@ async def generator_node(state: AgentState) -> dict:
     context_summary = build_context_summary(state)
 
     # RAG 检索相关教学资料
-    user_query = state["messages"][-1].content if state["messages"] else ""
     node_name = current_node.get("name", "") if current_node else ""
     search_query = f"{node_name} {user_query}" if node_name else user_query
     domain = learning_path.get("domain") if learning_path else None
@@ -67,14 +75,13 @@ async def generator_node(state: AgentState) -> dict:
     response = await llm.ainvoke([system_msg] + list(recent_messages))
 
     # 更新节点状态为学习中
-    node_states = state.get("node_states", {})
-    current = state.get("current_node", {})
-    if current and current.get("id"):
-        node_states = start_node(current["id"], node_states)
+    if current_node.get("id"):
+        node_states = start_node(current_node["id"], node_states)
 
     return {
         "messages": [AIMessage(content=response.content, name="generator")],
         "node_states": node_states,
+        "current_node": current_node,
         "next_agent": END,
         "agent_outputs": {
             **state.get("agent_outputs", {}),

@@ -3,6 +3,8 @@
 import time
 import math
 
+from app.services.learning_engine import index_by_node_name, normalize_node_name
+
 
 # 遗忘曲线参数（艾宾浩斯）
 DECAY_RATE = 0.1  # 衰减速率
@@ -87,6 +89,20 @@ def init_mastery_data(learning_path: dict) -> dict:
             "history": [],  # [{score, timestamp}]
         }
         for node in nodes
+    }
+
+
+def merge_mastery_data(learning_path: dict, old_data: dict, old_nodes: list) -> dict:
+    """调整路径后合并掌握度：按节点名称匹配，同名节点保留历史
+
+    以名称而非 LLM 生成的 id（node_1 风格）为合并键，避免跨主题
+    重新规划时旧掌握度嫁接到新节点；名称不重合的节点全新初始化。
+    """
+    old_by_name = index_by_node_name(old_data, old_nodes)
+    fresh = init_mastery_data(learning_path)
+    return {
+        node["id"]: old_by_name.get(normalize_node_name(node.get("name", "")), fresh[node["id"]])
+        for node in learning_path.get("nodes", [])
     }
 
 

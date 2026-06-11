@@ -143,8 +143,9 @@ class SimpleRAG:
 
     def search(self, query: str, top_k: int = 3, domain: str = None) -> list[dict]:
         """检索最相关的文档片段"""
-        if not self.chunks:
-            self.load_documents()
+        # _loaded 被外部置为 False 表示索引已失效（如文档变更），需重建
+        if not self.chunks or not self._loaded:
+            self.reload()
 
         if not self.chunks:
             return []
