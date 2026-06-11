@@ -61,12 +61,12 @@ export interface AgentInfo {
 }
 
 export const AGENTS: Record<string, AgentInfo> = {
-  coordinator: { name: 'coordinator', displayName: '协调者', description: '任务分发与调度', color: '#8b5cf6', icon: '🎯' },
-  profiler: { name: 'profiler', displayName: '画像师', description: '能力评估', color: '#3b82f6', icon: '📊' },
-  planner: { name: 'planner', displayName: '规划师', description: '路径规划', color: '#10b981', icon: '🗺️' },
-  generator: { name: 'generator', displayName: '生成器', description: '资源生成', color: '#f59e0b', icon: '📝' },
-  tutor: { name: 'tutor', displayName: '导师', description: '答疑解惑', color: '#ef4444', icon: '👨‍🏫' },
-  assessor: { name: 'assessor', displayName: '评估师', description: '学习评估', color: '#06b6d4', icon: '✅' },
+  coordinator: { name: 'coordinator', displayName: '协调者', description: '任务分发与调度', color: '#9C7BB8', icon: '🎯' },
+  profiler: { name: 'profiler', displayName: '画像师', description: '能力评估', color: '#7A91B5', icon: '📊' },
+  planner: { name: 'planner', displayName: '规划师', description: '路径规划', color: '#7D9D77', icon: '🗺️' },
+  generator: { name: 'generator', displayName: '生成器', description: '资源生成', color: '#C2974D', icon: '📝' },
+  tutor: { name: 'tutor', displayName: '导师', description: '答疑解惑', color: '#B5697A', icon: '👨‍🏫' },
+  assessor: { name: 'assessor', displayName: '评估师', description: '学习评估', color: '#5E9C94', icon: '✅' },
 }
 
 // ===== WebSocket 事件 =====

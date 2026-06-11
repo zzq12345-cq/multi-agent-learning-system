@@ -55,15 +55,15 @@ export default function ActivityFeed() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-xs text-zinc-400">加载中...</div>
+    return <div className="p-8 text-center text-xs text-stone-400">加载中...</div>
   }
 
   if (!activities.length) {
     return (
       <div className="p-8 text-center">
-        <MessageCircle className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
-        <p className="text-xs text-zinc-500">暂无学习动态</p>
-        <p className="text-[10px] text-zinc-400 mt-1">开始学习后，你的进度会出现在这里</p>
+        <MessageCircle className="w-8 h-8 text-stone-300 mx-auto mb-3" />
+        <p className="text-xs text-stone-500">暂无学习动态</p>
+        <p className="text-[10px] text-stone-400 mt-1">开始学习后，你的进度会出现在这里</p>
       </div>
     )
   }
@@ -78,24 +78,24 @@ export default function ActivityFeed() {
         })
 
         return (
-          <div key={activity.id} className="p-3.5 rounded-xl border border-zinc-200/60 bg-white">
+          <div key={activity.id} className="p-3.5 rounded-xl border border-stone-200/60 bg-surface">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 border border-zinc-200/60 flex items-center justify-center text-zinc-500 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200/60 flex items-center justify-center text-stone-500 flex-shrink-0">
                 <Icon className="w-3.5 h-3.5" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-zinc-900">{activity.username}</span>
-                  <span className="text-[9px] text-zinc-400">{timeStr}</span>
+                  <span className="text-[11px] font-bold text-stone-900">{activity.username}</span>
+                  <span className="text-[9px] text-stone-400">{timeStr}</span>
                 </div>
-                <p className="text-[11px] text-zinc-600 mt-0.5">{activity.content}</p>
+                <p className="text-[11px] text-stone-600 mt-0.5">{activity.content}</p>
                 <button
                   onClick={() => !isLiked && handleLike(activity.id)}
                   className={`mt-2 flex items-center gap-1 text-[10px] transition-colors ${
-                    isLiked ? 'text-red-400' : 'text-zinc-400 hover:text-red-400'
+                    isLiked ? 'text-rose-400' : 'text-stone-400 hover:text-rose-400'
                   }`}
                 >
-                  <Heart className={`w-3 h-3 ${isLiked ? 'fill-red-400' : ''}`} />
+                  <Heart className={`w-3 h-3 ${isLiked ? 'fill-rose-400' : ''}`} />
                   {activity.likes > 0 && <span>{activity.likes}</span>}
                 </button>
               </div>

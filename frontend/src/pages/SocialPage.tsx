@@ -19,7 +19,7 @@ export default function SocialPage() {
       <Header />
       <div className="flex-1 flex flex-col overflow-hidden max-w-3xl mx-auto w-full">
         {/* Tab 切换 */}
-        <div className="flex border-b border-zinc-200/50 bg-white/80 px-4">
+        <div className="flex border-b border-stone-200/50 bg-ivory/80 px-4">
           {tabs.map((t) => {
             const Icon = t.icon
             return (
@@ -28,8 +28,8 @@ export default function SocialPage() {
                 onClick={() => setTab(t.id)}
                 className={`flex items-center gap-1.5 px-4 py-3 text-[11px] font-medium transition-all border-b-2 ${
                   tab === t.id
-                    ? 'text-zinc-900 border-zinc-900'
-                    : 'text-zinc-400 border-transparent hover:text-zinc-600'
+                    ? 'text-stone-900 border-stone-900'
+                    : 'text-stone-400 border-transparent hover:text-stone-600'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />

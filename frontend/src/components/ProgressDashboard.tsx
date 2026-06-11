@@ -67,10 +67,10 @@ export default function ProgressDashboard() {
   }, [learningPath, nodeStates])
 
   return (
-    <div className="h-full flex flex-col bg-[#f7f7f5] overflow-y-auto">
+    <div className="h-full flex flex-col bg-cream overflow-y-auto">
       {/* 头部统计 */}
-      <div className="p-4 border-b border-zinc-200/50">
-        <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-3">
+      <div className="p-4 border-b border-stone-200/50">
+        <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-3">
           学习进度
         </h3>
 
@@ -106,10 +106,10 @@ export default function ProgressDashboard() {
       {/* 能力雷达图 */}
       {learningPath?.nodes && learningPath.nodes.length > 0 && radarData.length > 0 && (
         <div className="px-4 pt-4">
-          <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+          <div className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-2">
             能力分布
           </div>
-          <div className="flex justify-center bg-white rounded-xl border border-zinc-200/60 p-3">
+          <div className="flex justify-center bg-surface rounded-xl border border-stone-200/60 p-3">
             <RadarChart data={radarData} />
           </div>
         </div>
@@ -118,13 +118,13 @@ export default function ProgressDashboard() {
       {/* 进度条 */}
       {totalNodes > 0 && (
         <div className="px-4 pt-4">
-          <div className="flex justify-between text-[9px] text-zinc-500 mb-1.5">
+          <div className="flex justify-between text-[9px] text-stone-500 mb-1.5">
             <span>总体进度</span>
             <span>{progressPercent}%</span>
           </div>
-          <div className="h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-stone-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-emerald-400 to-indigo-500 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-emerald-400 to-primary-500 rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -167,7 +167,7 @@ export default function ProgressDashboard() {
       {/* 节点列表 */}
       {learningPath?.nodes && (
         <div className="px-4 pt-4 flex-1">
-          <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+          <div className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mb-2">
             知识节点
           </div>
           <div className="space-y-1.5">
@@ -179,22 +179,22 @@ export default function ProgressDashboard() {
                 <div
                   key={node.id}
                   className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-[9px] ${
-                    status === 'completed' ? 'border-indigo-200 bg-indigo-50/50 text-indigo-700' :
+                    status === 'completed' ? 'border-primary-200 bg-primary-50/50 text-primary-700' :
                     status === 'in_progress' ? 'border-emerald-200 bg-emerald-50/50 text-emerald-700' :
-                    status === 'available' ? 'border-zinc-200 bg-white text-zinc-700' :
-                    'border-zinc-100 bg-zinc-50 text-zinc-400'
+                    status === 'available' ? 'border-stone-200 bg-surface text-stone-700' :
+                    'border-stone-100 bg-stone-50 text-stone-400'
                   }`}
                 >
                   <span className={`w-4 h-4 rounded-md border flex items-center justify-center text-[7px] font-bold ${
-                    status === 'completed' ? 'border-indigo-300 bg-indigo-100 text-indigo-600' :
+                    status === 'completed' ? 'border-primary-300 bg-primary-100 text-primary-600' :
                     status === 'in_progress' ? 'border-emerald-300 bg-emerald-100 text-emerald-600' :
-                    'border-zinc-200 bg-zinc-100 text-zinc-400'
+                    'border-stone-200 bg-stone-100 text-stone-400'
                   }`}>
                     {status === 'completed' ? '✓' : i + 1}
                   </span>
                   <span className="flex-1 truncate font-medium">{node.name}</span>
                   {state?.score != null && (
-                    <span className="text-[8px] font-mono text-indigo-500">{state.score}分</span>
+                    <span className="text-[8px] font-mono text-primary-500">{state.score}分</span>
                   )}
                 </div>
               )
@@ -206,9 +206,9 @@ export default function ProgressDashboard() {
       {!learningPath && (
         <div className="flex-1 flex items-center justify-center text-center px-6">
           <div>
-            <BarChart3 className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
-            <p className="text-[10px] text-zinc-500 font-medium">暂无学习数据</p>
-            <p className="text-[9px] text-zinc-400 mt-1">开始学习后这里会显示进度</p>
+            <BarChart3 className="w-8 h-8 text-stone-300 mx-auto mb-3" />
+            <p className="text-[10px] text-stone-500 font-medium">暂无学习数据</p>
+            <p className="text-[9px] text-stone-400 mt-1">开始学习后这里会显示进度</p>
           </div>
         </div>
       )}
@@ -223,13 +223,13 @@ function StatCard({ icon: Icon, label, value, sub }: {
   sub: string
 }) {
   return (
-    <div className="p-2.5 rounded-xl border border-zinc-200/60 bg-white">
+    <div className="p-2.5 rounded-xl border border-stone-200/60 bg-surface">
       <div className="flex items-center gap-1.5 mb-1">
-        <Icon className="w-3 h-3 text-zinc-400" />
-        <span className="text-[8px] text-zinc-400 font-medium">{label}</span>
+        <Icon className="w-3 h-3 text-stone-400" />
+        <span className="text-[8px] text-stone-400 font-medium">{label}</span>
       </div>
-      <div className="text-sm font-bold text-zinc-900">{value}</div>
-      <div className="text-[8px] text-zinc-400 mt-0.5">{sub}</div>
+      <div className="text-sm font-bold text-stone-900">{value}</div>
+      <div className="text-[8px] text-stone-400 mt-0.5">{sub}</div>
     </div>
   )
 }
@@ -260,21 +260,21 @@ function RadarChart({ data }: { data: { label: string; value: number }[] }) {
         {gridLevels.map((level) => {
           const points = data.map((_, i) => getPoint(i, level))
           const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
-          return <path key={level} d={path} fill="none" stroke="#e4e4e7" strokeWidth="0.5" />
+          return <path key={level} d={path} fill="none" className="stroke-stone-200" strokeWidth="0.5" />
         })}
 
         {/* 轴线 */}
         {data.map((_, i) => {
           const p = getPoint(i, 100)
-          return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="#e4e4e7" strokeWidth="0.5" />
+          return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} className="stroke-stone-200" strokeWidth="0.5" />
         })}
 
         {/* 数据区域 */}
-        <path d={dataPath} fill="rgba(99, 102, 241, 0.15)" stroke="#6366f1" strokeWidth="1.5" />
+        <path d={dataPath} className="fill-primary-500/15 stroke-primary-500" strokeWidth="1.5" />
 
         {/* 数据点 */}
         {dataPoints.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#6366f1" />
+          <circle key={i} cx={p.x} cy={p.y} r="2.5" className="fill-primary-500" />
         ))}
 
         {/* 标签 */}
@@ -287,7 +287,7 @@ function RadarChart({ data }: { data: { label: string; value: number }[] }) {
               y={labelPoint.y}
               textAnchor="middle"
               dominantBaseline="middle"
-              className="text-[8px] fill-zinc-500"
+              className="text-[8px] fill-stone-500"
             >
               {d.label}
             </text>

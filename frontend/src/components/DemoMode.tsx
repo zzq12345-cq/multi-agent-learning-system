@@ -39,8 +39,7 @@ const DEMO_SCENARIOS = [
 
 export default function DemoMode() {
   const {
-    addMessage, setProfile, setLoading, clearTraces,
-    clearStreamingContent, clearMessages, setNodeStates, setLearningPath,
+    setProfile, clearMessages, setNodeStates, setLearningPath,
   } = useAppStore()
 
   const [visible] = useState(() => {
@@ -56,24 +55,12 @@ export default function DemoMode() {
     setLearningPath(null)
     setProfile(scenario.profile)
 
-    // 发送预设消息
-    const msg = scenario.messages[0]
-    addMessage({
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: msg,
-      timestamp: Date.now(),
-    })
-    setLoading(true)
-    clearTraces()
-    clearStreamingContent()
-
-    // 通过事件触发 WebSocket 发送
-    window.dispatchEvent(new CustomEvent('graph-send-message', { detail: { message: msg } }))
+    // 统一由 ChatPanel 的 graph-send-message 监听器入栈消息并发送，避免双写
+    window.dispatchEvent(new CustomEvent('graph-send-message', { detail: { message: scenario.messages[0] } }))
   }
 
   return (
-    <div className="p-3 border-b border-zinc-200/50 bg-gradient-to-r from-amber-50/50 to-orange-50/50">
+    <div className="p-3 border-b border-stone-200/50 bg-gradient-to-r from-amber-50/50 to-orange-50/50">
       <div className="flex items-center gap-1.5 mb-2">
         <Zap className="w-3 h-3 text-amber-500" />
         <span className="text-[9px] font-bold text-amber-700 uppercase tracking-wider">演示模式</span>
@@ -85,10 +72,10 @@ export default function DemoMode() {
             <button
               key={s.id}
               onClick={() => handleScenario(s)}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg border border-amber-200/60 bg-white hover:bg-amber-50 hover:border-amber-300 transition-all text-center active:scale-95"
+              className="flex flex-col items-center gap-1 p-2 rounded-lg border border-amber-200/60 bg-surface hover:bg-amber-50 hover:border-amber-300 transition-all text-center active:scale-95"
             >
               <Icon className="w-3.5 h-3.5 text-amber-600" />
-              <span className="text-[8px] font-medium text-zinc-700">{s.label}</span>
+              <span className="text-[8px] font-medium text-stone-700">{s.label}</span>
             </button>
           )
         })}

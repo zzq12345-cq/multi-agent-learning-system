@@ -18,7 +18,7 @@ export default function Toast({ message, type = 'info', duration = 3000, onClose
   const colors = {
     success: 'bg-green-50 border-green-200 text-green-700',
     error: 'bg-red-50 border-red-200 text-red-700',
-    info: 'bg-blue-50 border-blue-200 text-blue-700',
+    info: 'bg-primary-50 border-primary-200 text-primary-700',
   }
   const Icon = icons[type]
 

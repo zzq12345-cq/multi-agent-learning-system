@@ -31,28 +31,28 @@ export default function OnboardingGuide() {
   if (!visible) return null
 
   return (
-    <div className="mx-4 mb-4 p-4 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 animate-[fadeSlideUp_0.3s_ease-out]">
+    <div className="mx-4 mb-4 p-4 rounded-xl border border-primary-200 bg-gradient-to-r from-primary-50 to-cream animate-[fadeSlideUp_0.3s_ease-out]">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-blue-600" />
+          <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-primary-600" />
           </div>
-          <span className="text-xs font-bold text-blue-800">快速开始</span>
+          <span className="text-xs font-bold text-primary-800">快速开始</span>
         </div>
-        <button onClick={handleDismiss} className="text-blue-400 hover:text-blue-600">
+        <button onClick={handleDismiss} className="text-primary-400 hover:text-primary-600">
           <X className="w-4 h-4" />
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         {STEPS.map((step, i) => (
-          <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-white/60">
-            <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-surface/60">
+            <span className="w-5 h-5 rounded-full bg-primary-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
               {i + 1}
             </span>
             <div>
-              <div className="text-[10px] font-bold text-gray-800">{step.title}</div>
-              <div className="text-[9px] text-gray-500 leading-relaxed">{step.desc}</div>
+              <div className="text-[10px] font-bold text-stone-800">{step.title}</div>
+              <div className="text-[9px] text-stone-500 leading-relaxed">{step.desc}</div>
             </div>
           </div>
         ))}
@@ -60,7 +60,7 @@ export default function OnboardingGuide() {
 
       <button
         onClick={handleDismiss}
-        className="mt-3 w-full py-2 bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-medium rounded-lg transition-all flex items-center justify-center gap-1"
+        className="mt-3 w-full py-2 bg-primary-500 hover:bg-primary-600 text-white text-[10px] font-medium rounded-lg transition-all flex items-center justify-center gap-1"
       >
         我知道了，开始学习
         <ArrowRight className="w-3 h-3" />

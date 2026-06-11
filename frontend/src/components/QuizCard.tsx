@@ -32,18 +32,18 @@ export default function QuizCard({ questions, onSubmit }: QuizCardProps) {
 
   return (
     <div className="space-y-4 my-2">
-      <div className="flex items-center gap-2 text-blue-600">
+      <div className="flex items-center gap-2 text-primary-600">
         <span className="text-sm font-bold">📝 学习检测</span>
-        <span className="text-[10px] text-gray-400">共 {questions.length} 题</span>
+        <span className="text-[10px] text-stone-400">共 {questions.length} 题</span>
       </div>
 
       {questions.map((q, idx) => {
         const selected = answers[q.id]
 
         return (
-          <div key={q.id} className="p-4 rounded-xl border border-gray-200 bg-white">
-            <div className="text-xs font-medium text-gray-900 mb-3">
-              <span className="text-blue-500 mr-1.5">{idx + 1}.</span>
+          <div key={q.id} className="p-4 rounded-xl border border-stone-200 bg-surface">
+            <div className="text-xs font-medium text-stone-900 mb-3">
+              <span className="text-primary-500 mr-1.5">{idx + 1}.</span>
               {q.question}
             </div>
             <div className="space-y-2">
@@ -64,8 +64,8 @@ export default function QuizCard({ questions, onSubmit }: QuizCardProps) {
                         : isWrong
                           ? 'border-red-300 bg-red-50 text-red-700'
                           : isSelected
-                            ? 'border-blue-300 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50 text-gray-700'
+                            ? 'border-primary-300 bg-primary-50 text-primary-700'
+                            : 'border-stone-200 hover:border-primary-200 hover:bg-primary-50/50 text-stone-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -85,7 +85,7 @@ export default function QuizCard({ questions, onSubmit }: QuizCardProps) {
         <button
           onClick={handleSubmit}
           disabled={!allAnswered}
-          className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+          className="w-full py-2.5 bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
         >
           提交答案
           <ChevronRight className="w-3.5 h-3.5" />
@@ -93,7 +93,7 @@ export default function QuizCard({ questions, onSubmit }: QuizCardProps) {
       )}
 
       {submitted && (
-        <div className="text-center text-[11px] text-gray-500 py-2">
+        <div className="text-center text-[11px] text-stone-500 py-2">
           ✅ 已提交，等待评估师评判...
         </div>
       )}

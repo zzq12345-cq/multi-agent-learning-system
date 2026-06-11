@@ -29,9 +29,9 @@ export default function AgentPanel() {
   const agents = Object.values(AGENTS)
 
   return (
-    <div className="h-full flex flex-col bg-white border-r border-gray-200">
-      <div className="p-4 border-b border-gray-100">
-        <h3 className="text-xs font-bold text-gray-900">
+    <div className="h-full flex flex-col bg-ivory border-r border-stone-200">
+      <div className="p-4 border-b border-stone-100">
+        <h3 className="text-xs font-bold text-stone-900">
           Agent 协作面板
         </h3>
       </div>
@@ -56,29 +56,29 @@ export default function AgentPanel() {
               key={agent.name}
               className={`p-3 rounded-xl transition-all duration-200 ${
                 isActive
-                  ? 'bg-blue-50 border-l-[3px] border-l-blue-500 border-y border-r border-y-blue-100 border-r-blue-100'
-                  : 'bg-white border border-gray-100 hover:bg-gray-50'
+                  ? 'bg-primary-50 border-l-[3px] border-l-primary-500 border-y border-r border-y-primary-100 border-r-primary-100'
+                  : 'bg-surface border border-stone-100 hover:bg-stone-50'
               }`}
             >
               <div className="flex items-start gap-2.5">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  isActive ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-500'
+                  isActive ? 'bg-primary-500 text-white' : 'bg-primary-50 text-primary-500'
                 }`}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs font-bold ${isActive ? 'text-gray-900' : 'text-gray-700'}`}>
+                    <span className={`text-xs font-bold ${isActive ? 'text-stone-900' : 'text-stone-700'}`}>
                       {agent.displayName}
                     </span>
                     {isActive && (
                       <span className="flex h-2 w-2 relative">
-                        <span className="animate-ping absolute h-full w-full rounded-full bg-blue-400 opacity-75" />
-                        <span className="relative rounded-full h-2 w-2 bg-blue-500" />
+                        <span className="animate-ping absolute h-full w-full rounded-full bg-primary-400 opacity-75" />
+                        <span className="relative rounded-full h-2 w-2 bg-primary-500" />
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">
+                  <p className="text-[10px] text-stone-500 mt-0.5 leading-relaxed">
                     {description}
                   </p>
                 </div>

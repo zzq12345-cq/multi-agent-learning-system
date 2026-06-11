@@ -28,7 +28,7 @@ export default function AgentFlowViz() {
   const activatedAgents = new Set(agentTraces.map((t) => t.agent))
 
   return (
-    <div className="relative w-full bg-gray-50 rounded-xl border border-gray-200 p-3 overflow-hidden">
+    <div className="relative w-full bg-cream rounded-xl border border-stone-200 p-3 overflow-hidden">
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
         {routes.map((route, i) => {
           const fromIdx = AGENT_ORDER.indexOf(route.from)
@@ -42,7 +42,7 @@ export default function AgentFlowViz() {
               key={i}
               x1={`${x1}%`} y1="50%"
               x2={`${x2}%`} y2="50%"
-              stroke={i === routes.length - 1 ? '#3b82f6' : '#a1a1aa'}
+              stroke={i === routes.length - 1 ? 'rgb(var(--p-500))' : 'rgb(var(--n-400))'}
               strokeWidth={i === routes.length - 1 ? 2 : 1}
               strokeDasharray="6,4"
               className={i === routes.length - 1 ? 'animate-[dash_1s_linear_infinite]' : ''}
@@ -52,7 +52,7 @@ export default function AgentFlowViz() {
         })}
         <defs>
           <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L6,3 L0,6" fill="none" stroke="#93c5fd" strokeWidth="1" />
+            <path d="M0,0 L6,3 L0,6" fill="none" stroke="rgb(var(--p-300))" strokeWidth="1" />
           </marker>
         </defs>
       </svg>
@@ -68,22 +68,22 @@ export default function AgentFlowViz() {
               <div
                 className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                   isActive
-                    ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.3)] scale-110'
+                    ? 'border-primary-500 bg-primary-50 text-primary-600 shadow-[0_0_10px_rgb(var(--p-500)/0.25)] scale-110'
                     : wasActivated
-                      ? 'border-blue-200 bg-blue-50 text-blue-500'
-                      : 'border-gray-200 bg-white text-gray-400'
+                      ? 'border-primary-200 bg-primary-50 text-primary-500'
+                      : 'border-stone-200 bg-surface text-stone-400'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {isActive && (
                   <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-500" />
                   </span>
                 )}
               </div>
               <span className={`text-[8px] font-medium leading-none ${
-                isActive ? 'text-blue-600' : wasActivated ? 'text-gray-700' : 'text-gray-400'
+                isActive ? 'text-primary-600' : wasActivated ? 'text-stone-700' : 'text-stone-400'
               }`}>
                 {AGENTS[name]?.displayName || name}
               </span>

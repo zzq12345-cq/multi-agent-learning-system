@@ -65,16 +65,16 @@ export default function MessageBubble({ message }: Props) {
       <div
         className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-200 ${
           isUser 
-            ? 'bg-zinc-900 text-white shadow-sm' 
-            : 'bg-white border border-zinc-200 text-zinc-500'
+            ? 'bg-stone-900 text-white shadow-sm'
+            : 'bg-surface border border-stone-200 text-stone-500'
         }`}
       >
         {isUser ? (
           <User className="w-4 h-4" />
         ) : AgentIcon ? (
-          <AgentIcon className="w-4 h-4 text-zinc-600" />
+          <AgentIcon className="w-4 h-4 text-stone-600" />
         ) : (
-          <Sparkles className="w-4 h-4 text-zinc-500" />
+          <Sparkles className="w-4 h-4 text-stone-500" />
         )}
       </div>
 
@@ -83,10 +83,10 @@ export default function MessageBubble({ message }: Props) {
         {/* Agent 标签 */}
         {agent && !isUser && (
           <div className="mb-1 flex items-center gap-1.5">
-            <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold bg-zinc-50 border border-zinc-200 text-zinc-600 rounded">
+            <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold bg-stone-50 border border-stone-200 text-stone-600 rounded">
               {agent.displayName}
             </span>
-            <span className="text-[8px] text-zinc-400 font-mono">
+            <span className="text-[8px] text-stone-400 font-mono">
               {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
@@ -96,8 +96,8 @@ export default function MessageBubble({ message }: Props) {
         <div
           className={`px-3.5 py-2.5 rounded-xl leading-relaxed text-xs border ${
             isUser
-              ? 'bg-zinc-100 border-zinc-200 text-zinc-900 rounded-tr-sm shadow-[0_1px_2px_rgba(0,0,0,0.01)]'
-              : 'bg-white border-zinc-200/80 text-zinc-800 rounded-tl-sm shadow-[0_1px_3px_rgba(0,0,0,0.01)]'
+              ? 'bg-oat border-stone-200 text-stone-900 rounded-tr-sm shadow-[0_1px_2px_rgba(0,0,0,0.01)]'
+              : 'bg-surface border-stone-200/80 text-stone-800 rounded-tl-sm shadow-[0_1px_3px_rgba(0,0,0,0.01)]'
           }`}
         >
           {isUser ? (

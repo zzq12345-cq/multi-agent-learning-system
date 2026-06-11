@@ -63,10 +63,10 @@ export default function ReviewReminder() {
           <button
             key={node.id}
             onClick={() => handleReview(node.name)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white border border-amber-100 hover:border-amber-300 transition-all text-left"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-surface border border-amber-100 hover:border-amber-300 transition-all text-left"
           >
             <div>
-              <span className="text-[11px] font-medium text-gray-800">{node.name}</span>
+              <span className="text-[11px] font-medium text-stone-800">{node.name}</span>
               <span className="text-[9px] text-amber-500 ml-2">{node.originalMastery}% → {node.currentMastery}%</span>
             </div>
             <RefreshCw className="w-3.5 h-3.5 text-amber-400" />

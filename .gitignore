@@ -27,3 +27,7 @@ dist/
 
 # Runtime data
 backend/data/
+
+# Build cache & test artifacts
+*.tsbuildinfo
+.playwright-mcp/

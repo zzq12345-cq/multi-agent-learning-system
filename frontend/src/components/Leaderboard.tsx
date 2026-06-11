@@ -11,7 +11,7 @@ interface LeaderboardEntry {
 
 const RANK_STYLES = [
   'bg-amber-50 border-amber-200 text-amber-700',
-  'bg-zinc-50 border-zinc-200 text-zinc-600',
+  'bg-stone-50 border-stone-200 text-stone-600',
   'bg-orange-50 border-orange-200 text-orange-600',
 ]
 
@@ -28,15 +28,15 @@ export default function Leaderboard() {
   }, [])
 
   if (loading) {
-    return <div className="p-8 text-center text-xs text-zinc-400">加载中...</div>
+    return <div className="p-8 text-center text-xs text-stone-400">加载中...</div>
   }
 
   if (!entries.length) {
     return (
       <div className="p-8 text-center">
-        <Trophy className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
-        <p className="text-xs text-zinc-500">暂无排行数据</p>
-        <p className="text-[10px] text-zinc-400 mt-1">完成学习后即可上榜</p>
+        <Trophy className="w-8 h-8 text-stone-300 mx-auto mb-3" />
+        <p className="text-xs text-stone-500">暂无排行数据</p>
+        <p className="text-[10px] text-stone-400 mt-1">完成学习后即可上榜</p>
       </div>
     )
   }
@@ -47,31 +47,31 @@ export default function Leaderboard() {
         <div
           key={entry.user_id}
           className={`flex items-center gap-3 p-3 rounded-xl border ${
-            i < 3 ? RANK_STYLES[i] : 'border-zinc-200/60 bg-white'
+            i < 3 ? RANK_STYLES[i] : 'border-stone-200/60 bg-surface'
           }`}
         >
           {/* 排名 */}
           <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold ${
             i === 0 ? 'bg-amber-200 text-amber-800' :
-            i === 1 ? 'bg-zinc-200 text-zinc-700' :
+            i === 1 ? 'bg-stone-200 text-stone-700' :
             i === 2 ? 'bg-orange-200 text-orange-700' :
-            'bg-zinc-100 text-zinc-500'
+            'bg-stone-100 text-stone-500'
           }`}>
             {i + 1}
           </div>
 
           {/* 用户信息 */}
           <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-bold text-zinc-900">{entry.username}</div>
-            <div className="text-[9px] text-zinc-400 mt-0.5">
+            <div className="text-[11px] font-bold text-stone-900">{entry.username}</div>
+            <div className="text-[9px] text-stone-400 mt-0.5">
               完成 {entry.completed} 节点 · 掌握度 {entry.avg_mastery}%
             </div>
           </div>
 
           {/* 分数 */}
           <div className="text-right">
-            <div className="text-sm font-bold text-zinc-900">{entry.score}</div>
-            <div className="text-[8px] text-zinc-400">综合分</div>
+            <div className="text-sm font-bold text-stone-900">{entry.score}</div>
+            <div className="text-[8px] text-stone-400">综合分</div>
           </div>
         </div>
       ))}

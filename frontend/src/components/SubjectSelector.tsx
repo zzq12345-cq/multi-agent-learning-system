@@ -71,34 +71,34 @@ export default function SubjectSelector() {
   if (!subjects.length) return null
 
   return (
-    <div className="relative px-3 py-2.5 border-b border-gray-200 bg-white" ref={dropdownRef}>
+    <div className="relative px-3 py-2.5 border-b border-stone-200 bg-surface" ref={dropdownRef}>
       {/* 触发按钮 */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-gray-200 bg-white hover:border-blue-300 transition-all text-left"
+        className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-stone-200 bg-surface hover:border-primary-300 transition-all text-left"
       >
-        <ActiveIcon className="w-4 h-4 text-blue-500" />
-        <span className="flex-1 text-xs font-medium text-gray-800 truncate">
+        <ActiveIcon className="w-4 h-4 text-primary-500" />
+        <span className="flex-1 text-xs font-medium text-stone-800 truncate">
           {activeSubject?.title || '选择学科'}
         </span>
         {activeSubject?.source === 'dynamic' && <span className="text-[8px]">✨</span>}
-        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {/* 下拉面板 */}
       {open && (
-        <div className="absolute left-3 right-3 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute left-3 right-3 top-full mt-1 bg-surface border border-stone-200 rounded-xl shadow-lg z-50 overflow-hidden">
           {/* 搜索框 */}
-          <div className="p-2 border-b border-gray-100">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 rounded-lg">
-              <Search className="w-3.5 h-3.5 text-gray-400" />
+          <div className="p-2 border-b border-stone-100">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-stone-50 rounded-lg">
+              <Search className="w-3.5 h-3.5 text-stone-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="搜索学科..."
                 autoFocus
-                className="flex-1 bg-transparent text-xs text-gray-800 placeholder-gray-400 outline-none"
+                className="flex-1 bg-transparent text-xs text-stone-800 placeholder-stone-400 outline-none"
               />
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function SubjectSelector() {
           {/* 学科列表 */}
           <div className="max-h-48 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-gray-400 text-center">
+              <div className="px-3 py-2 text-xs text-stone-400 text-center">
                 无匹配学科，在对话中说出想学的内容即可创建
               </div>
             ) : (
@@ -118,22 +118,22 @@ export default function SubjectSelector() {
                     key={s.domain}
                     onClick={() => handleSelect(s.domain)}
                     className={`flex items-center gap-2.5 w-full px-3 py-2 text-left transition-colors ${
-                      isActive ? 'bg-blue-50' : 'hover:bg-gray-50'
+                      isActive ? 'bg-primary-50' : 'hover:bg-stone-50'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-primary-500' : 'text-stone-400'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
-                        <span className={`text-xs font-medium truncate ${isActive ? 'text-blue-600' : 'text-gray-700'}`}>
+                        <span className={`text-xs font-medium truncate ${isActive ? 'text-primary-600' : 'text-stone-700'}`}>
                           {s.title}
                         </span>
                         {s.source === 'dynamic' && <span className="text-[8px]">✨</span>}
                       </div>
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-[10px] text-stone-400">
                         {s.nodes_count} 节点{s.doc_count > 0 ? ` · ${s.doc_count} 文档` : ''}
                       </span>
                     </div>
-                    {isActive && <Check className="w-4 h-4 text-blue-500" />}
+                    {isActive && <Check className="w-4 h-4 text-primary-500" />}
                   </button>
                 )
               })

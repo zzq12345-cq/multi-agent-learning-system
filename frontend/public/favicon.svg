@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#D97757"/>
+  <!-- Claude 风格星芒 -->
+  <g fill="#FAF9F5">
+    <path d="M32 12 L34.8 26.2 L46 17.5 L37.8 29.2 L52 32 L37.8 34.8 L46 46.5 L34.8 37.8 L32 52 L29.2 37.8 L18 46.5 L26.2 34.8 L12 32 L26.2 29.2 L18 17.5 L29.2 26.2 Z"/>
+  </g>
+</svg>

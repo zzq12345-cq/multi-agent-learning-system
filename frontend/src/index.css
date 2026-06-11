@@ -1,8 +1,129 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Noto+Serif+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ========== 多主题变量（RGB 三元组，供 tailwind rgb(var() / alpha) 使用） ========== */
+
+/* 暖陶（默认）：Claude 奶油纸面 + 陶土橘 */
+:root,
+[data-theme='claude'] {
+  --p-50: 250 244 239;
+  --p-100: 244 229 218;
+  --p-200: 234 205 185;
+  --p-300: 224 176 151;
+  --p-400: 220 147 119;
+  --p-500: 217 119 87;
+  --p-600: 193 95 60;
+  --p-700: 160 76 47;
+  --p-800: 129 61 39;
+  --p-900: 105 51 35;
+  --n-50: 250 250 249;
+  --n-100: 245 245 244;
+  --n-200: 231 229 228;
+  --n-300: 214 211 209;
+  --n-400: 168 162 158;
+  --n-500: 120 113 108;
+  --n-600: 87 83 78;
+  --n-700: 68 64 60;
+  --n-800: 41 37 36;
+  --n-900: 28 25 23;
+  --surface: 255 255 255;
+  --bg: 250 249 245;
+  --cream: 245 244 238;
+  --oat: 240 238 230;
+  color-scheme: light;
+}
+
+/* 清韵：原蓝色清爽风（冷灰 + 蓝主色） */
+[data-theme='blue'] {
+  --p-50: 239 246 255;
+  --p-100: 219 234 254;
+  --p-200: 191 219 254;
+  --p-300: 147 197 253;
+  --p-400: 96 165 250;
+  --p-500: 59 130 246;
+  --p-600: 37 99 235;
+  --p-700: 29 78 216;
+  --p-800: 30 64 175;
+  --p-900: 30 58 138;
+  --n-50: 250 250 250;
+  --n-100: 244 244 245;
+  --n-200: 228 228 231;
+  --n-300: 212 212 216;
+  --n-400: 161 161 170;
+  --n-500: 113 113 122;
+  --n-600: 82 82 91;
+  --n-700: 63 63 70;
+  --n-800: 39 39 42;
+  --n-900: 24 24 27;
+  --surface: 255 255 255;
+  --bg: 251 251 250;
+  --cream: 245 245 243;
+  --oat: 244 244 245;
+  color-scheme: light;
+}
+
+/* 黛竹：草木绿编辑风 */
+[data-theme='sage'] {
+  --p-50: 243 246 240;
+  --p-100: 228 235 221;
+  --p-200: 201 215 187;
+  --p-300: 172 194 154;
+  --p-400: 143 172 124;
+  --p-500: 116 148 95;
+  --p-600: 93 122 75;
+  --p-700: 74 98 60;
+  --p-800: 59 78 48;
+  --p-900: 47 63 39;
+  --n-50: 250 250 249;
+  --n-100: 245 245 244;
+  --n-200: 231 229 228;
+  --n-300: 214 211 209;
+  --n-400: 168 162 158;
+  --n-500: 120 113 108;
+  --n-600: 87 83 78;
+  --n-700: 68 64 60;
+  --n-800: 41 37 36;
+  --n-900: 28 25 23;
+  --surface: 255 255 255;
+  --bg: 248 249 244;
+  --cream: 241 243 234;
+  --oat: 234 237 223;
+  color-scheme: light;
+}
+
+/* 暗夜：Claude 暖黑 + 陶土橘（中性色阶反转） */
+[data-theme='dark'] {
+  --p-50: 62 46 38;
+  --p-100: 77 54 43;
+  --p-200: 98 66 50;
+  --p-300: 130 84 62;
+  --p-400: 190 110 82;
+  --p-500: 217 119 87;
+  --p-600: 224 138 108;
+  --p-700: 232 160 134;
+  --p-800: 240 184 163;
+  --p-900: 246 207 192;
+  --n-50: 44 43 40;
+  --n-100: 52 51 47;
+  --n-200: 64 62 57;
+  --n-300: 80 78 71;
+  --n-400: 134 130 121;
+  --n-500: 161 157 147;
+  --n-600: 196 192 182;
+  --n-700: 218 215 206;
+  --n-800: 235 233 226;
+  --n-900: 247 246 241;
+  --surface: 45 44 41;
+  --bg: 33 32 29;
+  --cream: 40 39 36;
+  --oat: 56 54 48;
+  color-scheme: dark;
+}
+
+/* ========== 全局基础 ========== */
 
 /* 隐藏滚动条 */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -11,25 +132,26 @@
 :root {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
-  color: #18181b; /* zinc-900 */
-  background-color: #fbfbfa;
+  color: rgb(var(--n-800));
+  background-color: rgb(var(--bg));
 }
 
 body {
-  background-color: #fbfbfa;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(24, 24, 27, 0.01) 0px, transparent 50%),
-    linear-gradient(to bottom, #fbfbfa, #f5f5f3);
-  color: #18181b;
+  background-color: rgb(var(--bg));
+  background-image:
+    radial-gradient(at 0% 0%, rgb(var(--p-500) / 0.02) 0px, transparent 50%),
+    linear-gradient(to bottom, rgb(var(--bg)), rgb(var(--cream)));
+  color: rgb(var(--n-800));
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* 优雅淡雅微晶格背景 */
 .bg-grid-pattern {
   background-size: 28px 28px;
-  background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.015) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, rgb(var(--n-900) / 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(var(--n-900) / 0.02) 1px, transparent 1px);
 }
 
 /* 自定义极细滚动条 */
@@ -41,31 +163,31 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgb(var(--n-900) / 0.12);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.16);
+  background: rgb(var(--n-900) / 0.22);
 }
 
-/* 浅色毛玻璃与精致纸张卡片 */
+/* 毛玻璃与精致纸张卡片（随主题变化） */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgb(var(--bg) / 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgb(var(--n-900) / 0.08);
 }
 
 .paper-card {
-  background: #ffffff;
-  border: 1px solid rgba(24, 24, 27, 0.05);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.01), 0 8px 30px -10px rgba(0, 0, 0, 0.02);
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--n-200));
+  box-shadow: 0 1px 3px 0 rgb(var(--n-900) / 0.02), 0 8px 30px -10px rgb(var(--n-900) / 0.04);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .paper-card:hover {
-  border-color: rgba(24, 24, 27, 0.12);
+  border-color: rgb(var(--n-300));
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01), 0 12px 40px -12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 6px -1px rgb(var(--n-900) / 0.02), 0 12px 40px -12px rgb(var(--n-900) / 0.08);
 }
 
 /* 移去 ReactFlow 连线流光动画，回归极简实线 */
@@ -77,44 +199,53 @@ body {
 /* Markdown 高品质纸面排版美化 */
 .markdown-content {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  color: #27272a; /* zinc-800 */
+  color: rgb(var(--n-700));
   line-height: 1.75;
 }
-.markdown-content h1 { @apply text-lg font-bold mt-5 mb-3 text-zinc-900 border-b border-zinc-200/80 pb-1.5 tracking-tight; }
-.markdown-content h2 { @apply text-base font-bold mt-4 mb-2 text-zinc-900 tracking-tight; }
-.markdown-content h3 { @apply text-sm font-semibold mt-3 mb-1 text-zinc-800; }
-.markdown-content p { @apply mb-3.5 text-zinc-700 leading-relaxed; }
-.markdown-content ul { @apply list-disc pl-5 mb-3.5 space-y-1.5 text-zinc-700; }
-.markdown-content ol { @apply list-decimal pl-5 mb-3.5 space-y-1.5 text-zinc-700; }
-.markdown-content code { 
-  font-family: 'JetBrains Mono', monospace;
-  @apply bg-zinc-100 text-zinc-800 px-1.5 py-0.5 rounded text-[11px] border border-zinc-200/50; 
+.markdown-content h1 {
+  font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+  @apply text-lg font-bold mt-5 mb-3 text-stone-900 border-b border-stone-200/80 pb-1.5 tracking-tight;
 }
-.markdown-content pre { 
-  font-family: 'JetBrains Mono', monospace;
-  @apply bg-zinc-950 text-zinc-100 p-4 rounded-xl border border-zinc-900 mb-4 overflow-x-auto shadow-inner; 
+.markdown-content h2 {
+  font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+  @apply text-base font-bold mt-4 mb-2 text-stone-900 tracking-tight;
 }
-.markdown-content pre code { @apply bg-transparent p-0 text-inherit border-none text-[11px] leading-relaxed; }
-.markdown-content blockquote { @apply border-l-2 border-zinc-300 bg-zinc-50 px-4 py-2 rounded-r-lg italic text-zinc-500 mb-3.5; }
+.markdown-content h3 { @apply text-sm font-semibold mt-3 mb-1 text-stone-800; }
+.markdown-content p { @apply mb-3.5 text-stone-700 leading-relaxed; }
+.markdown-content ul { @apply list-disc pl-5 mb-3.5 space-y-1.5 text-stone-700; }
+.markdown-content ol { @apply list-decimal pl-5 mb-3.5 space-y-1.5 text-stone-700; }
+.markdown-content code {
+  font-family: 'JetBrains Mono', monospace;
+  @apply bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded text-[11px] border border-stone-200/60;
+}
+.markdown-content pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: #262624; /* Claude 暖黑代码面板（各主题统一） */
+  @apply text-stone-100 p-4 rounded-xl mb-4 overflow-x-auto shadow-inner;
+  border: 1px solid #3e3d39;
+  color: #f5f4ee;
+}
+.markdown-content pre code { @apply bg-transparent p-0 border-none text-[11px] leading-relaxed; color: inherit; }
+.markdown-content blockquote { @apply border-l-2 border-primary-300 bg-oat/60 px-4 py-2 rounded-r-lg italic text-stone-500 mb-3.5; }
 .markdown-content table { @apply w-full border-collapse mb-4 text-xs; }
-.markdown-content th { @apply bg-zinc-50 border border-zinc-200 px-4 py-2.5 text-left font-semibold text-zinc-800; }
-.markdown-content td { @apply border border-zinc-200/60 px-4 py-2 text-zinc-700; }
+.markdown-content th { @apply bg-cream border border-stone-200 px-4 py-2.5 text-left font-semibold text-stone-800; }
+.markdown-content td { @apply border border-stone-200/70 px-4 py-2 text-stone-700; }
 
-/* ReactFlow 浅色面板样式适配 */
+/* ReactFlow 面板样式适配（随主题变化） */
 .react-flow__background {
-  background-color: #f7f7f5 !important;
+  background-color: rgb(var(--cream)) !important;
 }
 .react-flow__controls-button {
-  background: #ffffff !important;
-  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
-  fill: #3f3f46 !important;
+  background: rgb(var(--surface)) !important;
+  border-bottom: 1px solid rgb(var(--n-900) / 0.08) !important;
+  fill: rgb(var(--n-600)) !important;
 }
 .react-flow__controls-button:hover {
-  background: #f4f4f5 !important;
+  background: rgb(var(--cream)) !important;
 }
 .react-flow__minimap {
-  background: #ffffff !important;
-  border: 1px solid rgba(0,0,0,0.06) !important;
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--n-900) / 0.08) !important;
   border-radius: 8px !important;
   overflow: hidden;
 }
@@ -129,3 +260,60 @@ body {
 @keyframes dash {
   to { stroke-dashoffset: -20; }
 }
+
+/* ========== 暗夜主题兼容层 ==========
+   语义色（红/绿/琥珀等）与 Agent 身份色是主题不变量，
+   但其浅色 pastel 档（-50/-100 底、-100/-200 边、-600/-700 字）在暖黑底上刺眼/不可读，
+   此处按「浅底→半透明色调、深字→亮字」规则统一压暗/提亮。
+   另含 .bg-white 安全网：兜住尚未 token 化的白底。 */
+
+[data-theme='dark'] .bg-white { background-color: rgb(var(--surface)); }
+[data-theme='dark'] .bg-white\/90 { background-color: rgb(var(--surface) / 0.9); }
+[data-theme='dark'] .hover\:bg-stone-50:hover { background-color: rgb(var(--n-100)); }
+
+/* 浅色底 → 半透明色调 */
+[data-theme='dark'] .bg-red-50, [data-theme='dark'] .hover\:bg-red-50:hover { background-color: rgb(239 68 68 / 0.14); }
+[data-theme='dark'] .bg-red-100, [data-theme='dark'] .hover\:bg-red-100:hover { background-color: rgb(239 68 68 / 0.22); }
+[data-theme='dark'] .bg-amber-50, [data-theme='dark'] .hover\:bg-amber-50:hover { background-color: rgb(245 158 11 / 0.14); }
+[data-theme='dark'] .bg-amber-50\/50 { background-color: rgb(245 158 11 / 0.08); }
+[data-theme='dark'] .bg-amber-100 { background-color: rgb(245 158 11 / 0.2); }
+[data-theme='dark'] .bg-amber-200 { background-color: rgb(245 158 11 / 0.3); }
+[data-theme='dark'] .bg-green-50 { background-color: rgb(34 197 94 / 0.14); }
+[data-theme='dark'] .bg-teal-50 { background-color: rgb(20 184 166 / 0.14); }
+[data-theme='dark'] .bg-rose-50 { background-color: rgb(244 63 94 / 0.14); }
+[data-theme='dark'] .bg-purple-50 { background-color: rgb(168 85 247 / 0.14); }
+[data-theme='dark'] .bg-orange-50 { background-color: rgb(249 115 22 / 0.14); }
+[data-theme='dark'] .bg-orange-200 { background-color: rgb(249 115 22 / 0.3); }
+[data-theme='dark'] .bg-emerald-50\/50 { background-color: rgb(16 185 129 / 0.08); }
+[data-theme='dark'] .bg-emerald-100 { background-color: rgb(16 185 129 / 0.2); }
+[data-theme='dark'] .bg-blue-50 { background-color: rgb(59 130 246 / 0.14); }
+
+/* 浅色边框 → 半透明色调 */
+[data-theme='dark'] .border-red-100 { border-color: rgb(239 68 68 / 0.3); }
+[data-theme='dark'] .border-red-200 { border-color: rgb(239 68 68 / 0.35); }
+[data-theme='dark'] .border-red-300 { border-color: rgb(239 68 68 / 0.45); }
+[data-theme='dark'] .border-amber-100 { border-color: rgb(245 158 11 / 0.3); }
+[data-theme='dark'] .border-amber-200, [data-theme='dark'] .border-amber-200\/60 { border-color: rgb(245 158 11 / 0.35); }
+[data-theme='dark'] .border-amber-300, [data-theme='dark'] .hover\:border-amber-300:hover { border-color: rgb(245 158 11 / 0.45); }
+[data-theme='dark'] .border-green-100 { border-color: rgb(34 197 94 / 0.3); }
+[data-theme='dark'] .border-green-200 { border-color: rgb(34 197 94 / 0.35); }
+[data-theme='dark'] .border-green-300 { border-color: rgb(34 197 94 / 0.45); }
+[data-theme='dark'] .border-teal-100 { border-color: rgb(20 184 166 / 0.3); }
+[data-theme='dark'] .border-rose-100 { border-color: rgb(244 63 94 / 0.3); }
+[data-theme='dark'] .border-purple-100 { border-color: rgb(168 85 247 / 0.3); }
+[data-theme='dark'] .border-orange-200 { border-color: rgb(249 115 22 / 0.35); }
+[data-theme='dark'] .border-emerald-200 { border-color: rgb(16 185 129 / 0.35); }
+[data-theme='dark'] .border-emerald-300 { border-color: rgb(16 185 129 / 0.45); }
+[data-theme='dark'] .border-blue-100 { border-color: rgb(59 130 246 / 0.3); }
+
+/* 深色字 → 亮色字（对应色相 -300 档） */
+[data-theme='dark'] .text-red-600, [data-theme='dark'] .text-red-700 { color: rgb(252 165 165); }
+[data-theme='dark'] .text-amber-600, [data-theme='dark'] .text-amber-700, [data-theme='dark'] .text-amber-800,
+[data-theme='dark'] .hover\:text-amber-600:hover { color: rgb(252 211 77); }
+[data-theme='dark'] .text-green-600, [data-theme='dark'] .text-green-700 { color: rgb(134 239 172); }
+[data-theme='dark'] .text-emerald-600, [data-theme='dark'] .text-emerald-700 { color: rgb(110 231 183); }
+[data-theme='dark'] .text-teal-600 { color: rgb(94 234 212); }
+[data-theme='dark'] .text-rose-600 { color: rgb(253 164 175); }
+[data-theme='dark'] .text-purple-600 { color: rgb(216 180 254); }
+[data-theme='dark'] .text-orange-600, [data-theme='dark'] .text-orange-700 { color: rgb(253 186 116); }
+[data-theme='dark'] .text-blue-600 { color: rgb(147 197 253); }
