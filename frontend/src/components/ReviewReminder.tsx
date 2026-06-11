@@ -36,7 +36,7 @@ export default function ReviewReminder() {
 
   const handleReview = (nodeName: string) => {
     window.dispatchEvent(new CustomEvent('graph-send-message', {
-      detail: { message: `我想复习「${nodeName}」这个知识点` }
+      detail: { message: `请为「${nodeName}」生成 2-3 道快速测验题` }
     }))
     setDismissed(true)
   }
