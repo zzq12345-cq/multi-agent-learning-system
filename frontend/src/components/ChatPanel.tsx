@@ -69,6 +69,7 @@ export default function ChatPanel() {
   const [input, setInput] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const wsRef = useRef<AgentWebSocket | null>(null)
 
@@ -89,8 +90,16 @@ export default function ChatPanel() {
     }
   }, [input])
 
+  // 自动滚动：直接设置容器 scrollTop（流式期间瞬时滚动，避免 smooth
+  // 动画被高频 token 反复打断造成页面上下弹跳）；用户向上翻看（距底
+  // 部超过阈值）时不抢滚动条
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollContainerRef.current
+    if (!el) return
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    if (distanceToBottom < 120) {
+      el.scrollTop = el.scrollHeight
+    }
   }, [messages, streamingContent])
 
   useEffect(() => {
@@ -291,7 +300,7 @@ export default function ChatPanel() {
 
   return (
     <div className="h-full flex flex-col bg-ivory relative overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 space-y-5">
         <ReviewReminder />
         {messages.length === 0 && <OnboardingGuide />}
         {messages.length === 0 && (

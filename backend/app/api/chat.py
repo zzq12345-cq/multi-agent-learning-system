@@ -323,6 +323,13 @@ async def _run_graph_with_cancel(
         for task in (graph_task, recv_task):
             if task is not None and not task.done():
                 task.cancel()
+                # 必须等待取消真正完成：receive_json 未完全退出时，外层循环
+                # 再次 receive 会触发 websockets 并发接收错误
+                # （"cannot call recv while another coroutine is already waiting"）
+                try:
+                    await task
+                except BaseException:
+                    pass
 
 
 async def _stream_graph_events(
