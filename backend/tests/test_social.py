@@ -23,6 +23,7 @@ def test_post_and_get_feed():
                 feed = get_feed(10)
                 assert len(feed) == 2
                 assert feed[0]["username"] == "小红"  # 最新的在前
+                assert feed[0]["comments"] == []  # 新动态评论初始化为空
 
 
 def test_like():

@@ -1,6 +1,7 @@
 """社交 API — 动态 Feed + 排行榜 + 徽章"""
 
 from fastapi import APIRouter, HTTPException, Depends, Header
+from loguru import logger
 from pydantic import BaseModel, Field
 from app.services.social import (
     get_feed,
@@ -11,9 +12,31 @@ from app.services.social import (
     check_badges,
     BADGE_DEFINITIONS,
 )
+from app.services.ai_companions import (
+    advance_companions,
+    respond_to_user_activities,
+    get_companion_leaderboard_entries,
+)
 from app.services.auth import decode_token
 
 router = APIRouter(prefix="/api/social", tags=["social"])
+
+
+def _tick_companions():
+    """AI 学伴惰性结算（毫秒级同步，失败不影响接口响应）"""
+    try:
+        advance_companions()
+        respond_to_user_activities()
+    except Exception as e:
+        logger.debug(f"AI 学伴结算失败: {e}")
+
+
+def _normalize_activity(act: dict) -> dict:
+    """旧数据兼容（缺 is_ai 按 false、缺 comments 按 []），并剔除内部字段"""
+    act.setdefault("is_ai", False)
+    act.setdefault("comments", [])
+    # ai_responded 是学伴回应的幂等标记，属实现细节，不进入 API 契约
+    return {k: v for k, v in act.items() if k != "ai_responded"}
 
 
 def _get_current_user(authorization: str = Header(default="")) -> str:
@@ -37,7 +60,8 @@ class SharePathRequest(BaseModel):
 async def api_get_feed(limit: int = 20):
     """获取学习动态 Feed"""
     limit = min(max(1, limit), 50)
-    return {"activities": get_feed(limit)}
+    _tick_companions()
+    return {"activities": [_normalize_activity(a) for a in get_feed(limit)]}
 
 
 @router.get("/leaderboard")
@@ -54,8 +78,14 @@ async def api_get_leaderboard():
             if loaded:
                 all_sessions[sid] = loaded
 
+    _tick_companions()
     leaderboard = calculate_leaderboard(all_sessions)
-    return {"leaderboard": leaderboard}
+    for entry in leaderboard:
+        entry.setdefault("is_ai", False)
+    # 并入 AI 学伴条目，统一按综合评分重排
+    merged = leaderboard + get_companion_leaderboard_entries()
+    merged.sort(key=lambda x: x["score"], reverse=True)
+    return {"leaderboard": merged[:10]}
 
 
 @router.get("/badges/{user_id}")

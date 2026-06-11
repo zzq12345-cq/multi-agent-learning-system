@@ -104,6 +104,42 @@ export interface AgentTrace {
   reasoning?: string
 }
 
+// ===== 社区（Social） =====
+
+/** 动态评论（旧数据缺 is_ai 按 false 处理） */
+export interface FeedComment {
+  author_id: string
+  author_name: string
+  is_ai?: boolean
+  content: string
+  timestamp: number
+}
+
+/** 社区动态条目（旧数据缺 is_ai/comments 时分别按 false/[] 处理） */
+export interface FeedActivity {
+  id: string
+  user_id: string
+  username: string
+  is_ai?: boolean
+  type: string
+  content: string
+  metadata: Record<string, unknown>
+  likes: number
+  liked_by: string[]
+  comments?: FeedComment[]
+  timestamp: number
+}
+
+/** 排行榜条目（字段名以后端现有实现为基准，仅新增 is_ai） */
+export interface LeaderboardEntry {
+  user_id: string
+  username: string
+  is_ai?: boolean
+  score: number
+  completed: number
+  avg_mastery: number
+}
+
 export type NodeStatus = 'locked' | 'available' | 'in_progress' | 'completed'
 
 export interface NodeState {

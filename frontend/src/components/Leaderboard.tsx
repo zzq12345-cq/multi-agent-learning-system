@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Trophy } from 'lucide-react'
+import { Trophy, Bot } from 'lucide-react'
+import type { LeaderboardEntry } from '../types'
 
-interface LeaderboardEntry {
-  user_id: string
-  username: string
-  score: number
-  completed: number
-  avg_mastery: number
+/** AI 学伴徽章：明确标注虚拟角色，与真实用户区分 */
+function AiBadge() {
+  return (
+    <span className="inline-flex items-center gap-0.5 px-1.5 py-px rounded-full bg-primary-100 border border-primary-200 text-primary-700 text-[9px] font-medium flex-shrink-0">
+      <Bot className="w-2.5 h-2.5" />
+      AI 学伴
+    </span>
+  )
 }
 
 const RANK_STYLES = [
@@ -62,7 +65,10 @@ export default function Leaderboard() {
 
           {/* 用户信息 */}
           <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-bold text-stone-900">{entry.username}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-stone-900">{entry.username}</span>
+              {entry.is_ai && <AiBadge />}
+            </div>
             <div className="text-[9px] text-stone-400 mt-0.5">
               完成 {entry.completed} 节点 · 掌握度 {entry.avg_mastery}%
             </div>

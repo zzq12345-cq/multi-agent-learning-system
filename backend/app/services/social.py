@@ -81,6 +81,7 @@ def post_activity(
         "metadata": metadata or {},
         "likes": 0,
         "liked_by": [],
+        "comments": [],
         "timestamp": time.time(),
     }
     activities.insert(0, activity)

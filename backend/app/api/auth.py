@@ -41,6 +41,15 @@ async def register(req: RegisterRequest):
     if not user:
         raise HTTPException(409, "用户名已存在")
 
+    # 社交：发布加入社区动态（失败不影响注册）
+    try:
+        from app.services.social import post_activity
+        post_activity(
+            user["user_id"], user["username"], "joined", "加入了智学社区", {}
+        )
+    except Exception:
+        pass
+
     token = create_access_token(user["user_id"])
     return AuthResponse(
         user_id=user["user_id"], username=user["username"], token=token
