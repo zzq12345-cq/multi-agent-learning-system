@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import Header from '../components/Header'
-import { Camera, Award, BarChart3, Key, LogOut, Trash2 } from 'lucide-react'
+import { Camera, Award, BarChart3, Key, LogOut, Trash2, Target, TrendingUp, AlertCircle } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { user, logout, nodeStates, learningPath, masteryData } = useAppStore()
+  const { user, logout, nodeStates, learningPath, masteryData, profile: userProfile } = useAppStore()
 
   const completedNodes = nodeStates.filter(n => n.status === 'completed').length
   const totalSubjects = learningPath ? 1 : 0
@@ -171,6 +171,64 @@ export default function ProfilePage() {
               <StatItem label="学习时长" value="—" />
             </div>
           </div>
+
+          {/* 学生画像 */}
+          {userProfile && (userProfile.goals || userProfile.strengths || userProfile.weaknesses) && (
+            <div className="bg-surface rounded-2xl border border-stone-100 p-6 mb-4 shadow-sm">
+              <h3 className="text-sm font-bold text-stone-900 mb-4 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary-500" />
+                学生画像
+              </h3>
+              <div className="space-y-3">
+                {userProfile.goals && userProfile.goals.length > 0 && (
+                  <div className="p-3 bg-cream rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="w-3.5 h-3.5 text-primary-500" />
+                      <span className="text-xs font-bold text-stone-900">学习目标</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.goals.map((goal, i) => (
+                        <span key={i} className="text-xs text-stone-600 px-2 py-1 bg-stone-50 rounded-lg border border-stone-100">
+                          {goal}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {userProfile.strengths && userProfile.strengths.length > 0 && (
+                  <div className="p-3 bg-cream rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-3.5 h-3.5 text-primary-500" />
+                      <span className="text-xs font-bold text-stone-900">优势</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.strengths.map((strength, i) => (
+                        <span key={i} className="text-xs text-stone-600 px-2 py-1 bg-stone-50 rounded-lg border border-stone-100">
+                          {strength}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {userProfile.weaknesses && userProfile.weaknesses.length > 0 && (
+                  <div className="p-3 bg-cream rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="w-3.5 h-3.5 text-primary-500" />
+                      <span className="text-xs font-bold text-stone-900">薄弱项</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.weaknesses.map((weakness, i) => (
+                        <span key={i} className="text-xs text-stone-600 px-2 py-1 bg-stone-50 rounded-lg border border-stone-100">
+                          {weakness}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* 我的徽章 */}
           <div className="bg-surface rounded-2xl border border-stone-100 p-6 mb-4 shadow-sm">
             <h3 className="text-sm font-bold text-stone-900 mb-4 flex items-center gap-2">

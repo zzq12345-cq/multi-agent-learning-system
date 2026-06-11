@@ -91,7 +91,7 @@ export interface WSEvent {
   learning_path?: LearningPath | null
   user_profile?: StudentProfile | null
   node_states?: Record<string, { status: string; score?: number | null }> | null
-  mastery_data?: Record<string, { mastery: number; last_review_ts: number; attempts: number }> | null
+  mastery_data?: Record<string, { mastery: number; last_review_ts: number; attempts: number; history?: Array<{ score: number; timestamp: number }> }> | null
   error?: string
   timestamp?: number
 }

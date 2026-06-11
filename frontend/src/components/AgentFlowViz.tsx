@@ -22,13 +22,34 @@ export default function AgentFlowViz() {
     .filter((t) => t.action === 'route' && t.detail)
     .map((t) => {
       const parts = (t.detail || '').split(' → ')
-      return { from: parts[0], to: parts[1], timestamp: t.timestamp }
+      return { from: parts[0], to: parts[1], timestamp: t.timestamp, reasoning: t.reasoning }
     })
 
   const activatedAgents = new Set(agentTraces.map((t) => t.agent))
+  const latestRoute = routes[routes.length - 1]
+
+  // 解析置信度
+  let confidence: number | null = null
+  if (latestRoute?.reasoning) {
+    try {
+      const parsed = JSON.parse(latestRoute.reasoning)
+      if (parsed.confidence !== undefined) {
+        confidence = parsed.confidence
+      }
+    } catch {
+      // 忽略解析错误
+    }
+  }
 
   return (
     <div className="relative w-full bg-cream rounded-xl border border-stone-200 p-3 overflow-hidden">
+      {/* 置信度徽章 */}
+      {confidence !== null && (
+        <div className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full bg-primary-500 text-white text-[9px] font-bold shadow-sm">
+          置信度 {Math.round(confidence * 100)}%
+        </div>
+      )}
+
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
         {routes.map((route, i) => {
           const fromIdx = AGENT_ORDER.indexOf(route.from)

@@ -93,4 +93,11 @@ def _format_profile(profile: dict) -> str:
         return "未建立"
     level = profile.get("knowledge_level", "intermediate")
     style = profile.get("learning_style", "balanced")
-    return f"水平: {level}, 风格: {style}"
+    parts = [f"水平: {level}, 风格: {style}"]
+    if profile.get("goals"):
+        parts.append(f"学习目标: {', '.join(profile['goals'])}")
+    if profile.get("strengths"):
+        parts.append(f"优势: {', '.join(profile['strengths'])}")
+    if profile.get("weaknesses"):
+        parts.append(f"薄弱项: {', '.join(profile['weaknesses'])}")
+    return " | ".join(parts)

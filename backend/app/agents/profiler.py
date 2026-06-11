@@ -83,6 +83,28 @@ def _parse_assessment(content: str, existing: dict) -> dict:
                 if style in line:
                     profile["learning_style"] = style
                     break
+        elif "goals:" in line:
+            # 提取冒号后的内容，按逗号或顿号分隔
+            parts = line.split("goals:", 1)
+            if len(parts) > 1:
+                raw = parts[1].strip()
+                items = [s.strip() for s in raw.replace("、", ",").split(",") if s.strip()]
+                if items:
+                    profile["goals"] = items
+        elif "strengths:" in line:
+            parts = line.split("strengths:", 1)
+            if len(parts) > 1:
+                raw = parts[1].strip()
+                items = [s.strip() for s in raw.replace("、", ",").split(",") if s.strip()]
+                if items:
+                    profile["strengths"] = items
+        elif "weaknesses:" in line:
+            parts = line.split("weaknesses:", 1)
+            if len(parts) > 1:
+                raw = parts[1].strip()
+                items = [s.strip() for s in raw.replace("、", ",").split(",") if s.strip()]
+                if items:
+                    profile["weaknesses"] = items
     return profile
 
 

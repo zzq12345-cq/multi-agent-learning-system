@@ -357,7 +357,22 @@ async def _stream_graph_events(
                 "tutor": "进入答疑解惑模式",
                 "assessor": "启动学习效果评估",
             }
-            reasoning = coordinator_output if coordinator_output and "意图识别" in coordinator_output else route_reasons.get(name, "")
+            # 兼容新旧格式：尝试解析 JSON，失败则用原值或兜底
+            reasoning = coordinator_output
+            if coordinator_output:
+                try:
+                    import json
+                    parsed = json.loads(coordinator_output)
+                    if isinstance(parsed, dict) and "reasoning" in parsed:
+                        reasoning = coordinator_output  # 保持 JSON 字符串，前端解析
+                    elif "意图识别" in coordinator_output:
+                        reasoning = coordinator_output
+                    else:
+                        reasoning = route_reasons.get(name, coordinator_output)
+                except (json.JSONDecodeError, ValueError):
+                    reasoning = coordinator_output if "意图识别" in coordinator_output else route_reasons.get(name, coordinator_output)
+            else:
+                reasoning = route_reasons.get(name, "")
             await websocket.send_json({
                 "type": "route",
                 "route_from": tracker["agent"],

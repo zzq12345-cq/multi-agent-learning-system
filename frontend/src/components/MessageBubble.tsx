@@ -1,9 +1,14 @@
+import { useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import mermaid from 'mermaid'
 import type { ChatMessage } from '../types'
 import { AGENTS } from '../types'
 import { Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck, User } from 'lucide-react'
 import QuizCard from './QuizCard'
+
+// 初始化 mermaid（中性主题，四套主题下可读）
+mermaid.initialize({ startOnLoad: false, theme: 'neutral' })
 
 interface QuizQuestion {
   id: string
@@ -58,6 +63,26 @@ export default function MessageBubble({ message }: Props) {
   const isUser = message.role === 'user'
   const agent = message.agentName ? AGENTS[message.agentName] : null
   const AgentIcon = agent ? ICON_MAP[message.agentName || ''] || Sparkles : null
+  const mermaidRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isUser && mermaidRef.current) {
+      const codes = mermaidRef.current.querySelectorAll('code.language-mermaid')
+      codes.forEach(async (code, i) => {
+        const parent = code.parentElement
+        if (!parent || parent.querySelector('svg')) return
+        try {
+          const { svg } = await mermaid.render(`mermaid-${message.timestamp}-${i}`, code.textContent || '')
+          const container = document.createElement('div')
+          container.className = 'mermaid-diagram my-3'
+          container.innerHTML = svg
+          parent.replaceChild(container, code)
+        } catch (e) {
+          console.warn('Mermaid 渲染失败:', e)
+        }
+      })
+    }
+  }, [message.content, isUser, message.timestamp])
 
   return (
     <div className={`flex gap-3 items-start ${isUser ? 'flex-row-reverse' : ''} animate-[fadeSlideUp_0.3s_ease-out]`}>
@@ -118,7 +143,7 @@ export default function MessageBubble({ message }: Props) {
               )
             }
             return (
-              <div className="markdown-content leading-relaxed">
+              <div ref={mermaidRef} className="markdown-content leading-relaxed">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {message.content}
                 </ReactMarkdown>

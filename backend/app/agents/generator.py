@@ -15,10 +15,11 @@ GENERATOR_PROMPT = """你是一个学习资源生成专家（Generator Agent）�
 2. **练习题**（exercise）：针对性练习，含答案和解析
 3. **代码示例**（code_example）：可运行的 Python 代码示例，含注释
 4. **知识总结**（summary）：精炼的要点总结，适合复习
+5. **流程图/思维导图**：用 Mermaid 语法嵌入 markdown 代码块（```mermaid ... ```）
 
 生成原则：
 - 根据学生水平调整内容深度和用词
-- 视觉型学生：多用图表描述、结构化排版
+- 视觉型学生：多用 Mermaid 图解（流程图/思维导图），视觉化呈现概念关系与执行流程
 - 实践型学生：多用实际案例和动手练习
 - 理论型学生：注重原理推导和逻辑链条
 - 内容准确、示例可运行
@@ -95,4 +96,14 @@ def _format_profile(profile: dict) -> str:
         return "未建立（按中级水平生成）"
     level = profile.get("knowledge_level", "intermediate")
     style = profile.get("learning_style", "balanced")
-    return f"水平: {level}, 风格: {style}"
+    parts = [f"水平: {level}, 风格: {style}"]
+    if profile.get("goals"):
+        parts.append(f"学习目标: {', '.join(profile['goals'])}")
+    if profile.get("strengths"):
+        parts.append(f"优势: {', '.join(profile['strengths'])}")
+    if profile.get("weaknesses"):
+        parts.append(f"薄弱项: {', '.join(profile['weaknesses'])}")
+    # 视觉型学生追加图解提示
+    if style == "visual":
+        parts.append("（优先用 Mermaid 图解）")
+    return " | ".join(parts)

@@ -17,6 +17,7 @@ PLANNER_PROMPT = """你是一个学习路径规划专家（Planner Agent）。
 2. 难度梯度递进，从基础到进阶
 3. 每个节点包含明确的学习目标和预计时间
 4. 考虑学生的学习风格调整内容形式
+5. 针对学生薄弱项增加针对性训练节点，优先覆盖学习目标
 
 学生画像：{profile}
 当前学习路径：{current_path}
@@ -66,8 +67,9 @@ async def planner_node(state: AgentState) -> dict:
     is_adjust = bool(current_path and current_path.get("nodes"))
 
     context_summary = build_context_summary(state)
+    profile_str = _format_profile(profile) if profile else "未建立"
     system_msg = SystemMessage(content=PLANNER_PROMPT.format(
-        profile=json.dumps(profile, ensure_ascii=False) if profile else "未建立",
+        profile=profile_str,
         current_path=_describe_current_path(state) if is_adjust else "无",
     ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
@@ -169,3 +171,19 @@ def _generate_path_summary(path: dict) -> str:
         f"路径已生成！你可以说「开始学习」进入第一个知识点，"
         f"或者告诉我需要调整的地方。"
     )
+
+
+def _format_profile(profile: dict) -> str:
+    """格式化学生画像"""
+    if not profile:
+        return "未建立"
+    level = profile.get("knowledge_level", "intermediate")
+    style = profile.get("learning_style", "balanced")
+    parts = [f"水平: {level}, 风格: {style}"]
+    if profile.get("goals"):
+        parts.append(f"学习目标: {', '.join(profile['goals'])}")
+    if profile.get("strengths"):
+        parts.append(f"优势: {', '.join(profile['strengths'])}")
+    if profile.get("weaknesses"):
+        parts.append(f"薄弱项: {', '.join(profile['weaknesses'])}")
+    return " | ".join(parts)

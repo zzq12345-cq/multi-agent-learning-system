@@ -13,7 +13,8 @@ import 'reactflow/dist/style.css'
 import { useAppStore } from '../stores/useAppStore'
 import { getPythonGraph } from '../services/api'
 import type { LearningPath, NodeStatus } from '../types'
-import { Star, Compass, CheckCircle2, Lock } from 'lucide-react'
+import { Star, Compass, CheckCircle2, Lock, TrendingUp } from 'lucide-react'
+import MemoryCurveModal from './MemoryCurveModal'
 
 // 节点状态样式（CSS 变量随主题切换；#7D9D77 鼠尾草绿为成功语义色，主题不变量）
 const STATUS_STYLES: Record<NodeStatus, { border: string; bg: string; iconColor: string; label: string }> = {
@@ -24,7 +25,9 @@ const STATUS_STYLES: Record<NodeStatus, { border: string; bg: string; iconColor:
 }
 
 function CustomKnowledgeNode({ data }: { data: any }) {
-  const { name, difficulty, status = 'available' } = data
+  const { name, difficulty, status = 'available', nodeId } = data
+  const { masteryData } = useAppStore()
+  const [showMemoryCurve, setShowMemoryCurve] = useState(false)
   const style = STATUS_STYLES[status as NodeStatus] || STATUS_STYLES.available
 
   const handleClick = () => {
@@ -38,45 +41,73 @@ function CustomKnowledgeNode({ data }: { data: any }) {
     }
   }
 
+  const handleMemoryCurve = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowMemoryCurve(true)
+  }
+
   const isClickable = status === 'available' || status === 'in_progress'
   const isCurrent = status === 'available' || status === 'in_progress'
+  const hasHistory = (masteryData[nodeId]?.history?.length ?? 0) > 0
 
   return (
-    <div
-      onClick={handleClick}
-      className={`relative px-4 py-3 rounded-xl text-left w-[180px] bg-surface group transition-all duration-200 hover:-translate-y-0.5 ${isClickable ? 'cursor-pointer hover:shadow-[0_0_0_3px_rgb(var(--p-500)/0.15)] hover:border-primary-300' : 'cursor-default opacity-75'}`}
-      style={{ border: `2px solid ${style.border}` }}
-    >
-      <Handle type="target" position={Position.Top} className="!bg-stone-300 !border-stone-200 !w-1.5 !h-1.5 !opacity-60" />
+    <>
+      <div
+        onClick={handleClick}
+        className={`relative px-4 py-3 rounded-xl text-left w-[180px] bg-surface group transition-all duration-200 hover:-translate-y-0.5 ${isClickable ? 'cursor-pointer hover:shadow-[0_0_0_3px_rgb(var(--p-500)/0.15)] hover:border-primary-300' : 'cursor-default opacity-75'}`}
+        style={{ border: `2px solid ${style.border}` }}
+      >
+        <Handle type="target" position={Position.Top} className="!bg-stone-300 !border-stone-200 !w-1.5 !h-1.5 !opacity-60" />
 
-      {/* 右上角状态图标 */}
-      <div className="absolute top-2 right-2">
-        {status === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-        {status === 'locked' && <Lock className="w-3.5 h-3.5 text-stone-400" />}
-        {isCurrent && (
-          <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold text-stone-900 line-clamp-1 pr-5">{name}</span>
-        <div className="flex items-center gap-1">
-          <div className="flex gap-0.5">
-            {[1, 2, 3].map((star) => (
-              <Star key={star} className={`w-3 h-3 ${star <= difficulty ? 'text-yellow-400 fill-yellow-400' : 'text-stone-200'}`} />
-            ))}
-          </div>
-          <span className={`text-[10px] ml-1 font-medium ${
-            status === 'completed' ? 'text-green-500' :
-            status === 'locked' ? 'text-stone-400' : 'text-primary-500'
-          }`}>
-            {style.label}
-          </span>
+        {/* 右上角状态图标 */}
+        <div className="absolute top-2 right-2">
+          {status === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+          {status === 'locked' && <Lock className="w-3.5 h-3.5 text-stone-400" />}
+          {isCurrent && (
+            <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
+          )}
         </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-bold text-stone-900 line-clamp-1 pr-5">{name}</span>
+          <div className="flex items-center gap-1">
+            <div className="flex gap-0.5">
+              {[1, 2, 3].map((star) => (
+                <Star key={star} className={`w-3 h-3 ${star <= difficulty ? 'text-yellow-400 fill-yellow-400' : 'text-stone-200'}`} />
+              ))}
+            </div>
+            <span className={`text-[10px] ml-1 font-medium ${
+              status === 'completed' ? 'text-green-500' :
+              status === 'locked' ? 'text-stone-400' : 'text-primary-500'
+            }`}>
+              {style.label}
+            </span>
+          </div>
+        </div>
+
+        {/* 记忆曲线按钮 */}
+        {hasHistory && (
+          <button
+            onClick={handleMemoryCurve}
+            className="absolute bottom-2 right-2 w-6 h-6 rounded-md bg-stone-100 hover:bg-primary-100 border border-stone-200 hover:border-primary-300 flex items-center justify-center transition-colors group/btn"
+            title="查看记忆曲线"
+          >
+            <TrendingUp className="w-3.5 h-3.5 text-stone-400 group-hover/btn:text-primary-500" />
+          </button>
+        )}
+
+        <Handle type="source" position={Position.Bottom} className="!bg-stone-300 !border-stone-200 !w-1.5 !h-1.5 !opacity-60" />
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-stone-300 !border-stone-200 !w-1.5 !h-1.5 !opacity-60" />
-    </div>
+      {showMemoryCurve && masteryData[nodeId] && (
+        <MemoryCurveModal
+          nodeId={nodeId}
+          nodeName={name}
+          masteryData={masteryData[nodeId]}
+          onClose={() => setShowMemoryCurve(false)}
+        />
+      )}
+    </>
   )
 }
 

@@ -1,11 +1,13 @@
 /** 学习进度看板 */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import { AlertTriangle, BarChart3, Target, Clock, TrendingUp } from 'lucide-react'
+import MemoryCurveModal from './MemoryCurveModal'
 
 export default function ProgressDashboard() {
   const { learningPath, nodeStates, profile, agentOutputs, masteryData } = useAppStore()
+  const [selectedNode, setSelectedNode] = useState<{ id: string; name: string } | null>(null)
 
   const totalNodes = learningPath?.nodes?.length || 0
   const completedNodes = nodeStates.filter((n) => n.status === 'completed').length
@@ -142,7 +144,7 @@ export default function ProgressDashboard() {
             <div className="space-y-1.5">
               {reviewNodes.map((node) => (
                 <div key={node.id} className="flex items-center justify-between text-[9px]">
-                  <span className="text-amber-800">{node.name}</span>
+                  <span className="text-amber-800 flex-1 truncate">{node.name}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-1 bg-amber-200 rounded-full overflow-hidden">
                       <div
@@ -153,6 +155,15 @@ export default function ProgressDashboard() {
                     <span className="text-amber-600 font-mono w-8 text-right">
                       {node.currentMastery}%
                     </span>
+                    {(masteryData[node.id]?.history?.length ?? 0) > 0 && (
+                      <button
+                        onClick={() => setSelectedNode({ id: node.id, name: node.name })}
+                        className="w-5 h-5 rounded flex items-center justify-center bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors"
+                        title="查看记忆曲线"
+                      >
+                        <TrendingUp className="w-3 h-3 text-amber-600" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -211,6 +222,16 @@ export default function ProgressDashboard() {
             <p className="text-[9px] text-stone-400 mt-1">开始学习后这里会显示进度</p>
           </div>
         </div>
+      )}
+
+      {/* 记忆曲线弹窗 */}
+      {selectedNode && masteryData[selectedNode.id] && (
+        <MemoryCurveModal
+          nodeId={selectedNode.id}
+          nodeName={selectedNode.name}
+          masteryData={masteryData[selectedNode.id]}
+          onClose={() => setSelectedNode(null)}
+        />
       )}
     </div>
   )

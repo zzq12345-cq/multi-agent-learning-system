@@ -4,32 +4,32 @@ from app.agents.coordinator import _resolve_route, _extract_reply
 
 
 def test_resolve_route_exact_match():
-    assert _resolve_route("tutor") == "tutor"
-    assert _resolve_route("planner") == "planner"
+    assert _resolve_route("tutor") == ("tutor", 0.95)
+    assert _resolve_route("planner") == ("planner", 0.95)
 
 
 def test_resolve_route_exact_match_with_wrapping():
     # 容忍引号、标点、Markdown 符号包裹
-    assert _resolve_route("「assessor」。") == "assessor"
-    assert _resolve_route("**generator**") == "generator"
-    assert _resolve_route("tutor。\n") == "tutor"
+    assert _resolve_route("「assessor」。") == ("assessor", 0.95)
+    assert _resolve_route("**generator**") == ("generator", 0.95)
+    assert _resolve_route("tutor。\n") == ("tutor", 0.95)
 
 
 def test_resolve_route_unique_substring():
-    assert _resolve_route("我会路由到 tutor 处理这个问题") == "tutor"
+    assert _resolve_route("我会路由到 tutor 处理这个问题") == ("tutor", 0.85)
 
 
 def test_resolve_route_multiple_names_no_route():
     # 命中多个 Agent 名时不强行路由，避免按 dict 顺序误判
-    assert _resolve_route("不需要 profiler，应该用 tutor") is None
+    assert _resolve_route("不需要 profiler，应该用 tutor") == (None, 0.7)
 
 
 def test_resolve_route_reply_prefix_no_route():
-    assert _resolve_route("reply: 你好，我是你的 tutor") is None
+    assert _resolve_route("reply: 你好，我是你的 tutor") == (None, 1.0)
 
 
 def test_resolve_route_no_match():
-    assert _resolve_route("你好") is None
+    assert _resolve_route("你好") == (None, 0.7)
 
 
 def test_extract_reply_keeps_case():

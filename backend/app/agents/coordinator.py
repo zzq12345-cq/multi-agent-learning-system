@@ -46,18 +46,18 @@ AGENT_MAP = {
 _WRAP_CHARS = "\"'`*#·「」『』（）()【】[]。.，,：:？?！! \n\r\t"
 
 
-def _resolve_route(content: str) -> str | None:
-    """解析路由目标（入参须为小写文本）：精确匹配优先；子串匹配仅唯一命中时生效，避免误路由"""
+def _resolve_route(content: str) -> tuple[str | None, float]:
+    """解析路由目标（入参须为小写文本）：返回 (目标, 置信度)"""
     if "reply:" in content:
-        return None
+        return None, 1.0
     exact = content.strip(_WRAP_CHARS)
     if exact in AGENT_MAP:
-        return AGENT_MAP[exact]
+        return AGENT_MAP[exact], 0.95
     # 子串匹配：命中多个 Agent 名时视为普通回复，不强行路由
     hits = [name for name in AGENT_MAP if name in content]
     if len(hits) == 1:
-        return AGENT_MAP[hits[0]]
-    return None
+        return AGENT_MAP[hits[0]], 0.85
+    return None, 0.7
 
 
 def _extract_reply(raw_content: str) -> str:
@@ -104,14 +104,19 @@ async def coordinator_node(state: AgentState) -> dict:
     # 保留原文用于直接回复，仅用小写副本做路由判定
     raw_content = response.content.strip()
 
-    target = _resolve_route(raw_content.lower())
+    target, confidence = _resolve_route(raw_content.lower())
     if target:
+        import json
+        coordinator_output = json.dumps({
+            "reasoning": raw_content[:80],
+            "confidence": confidence
+        }, ensure_ascii=False)
         return {
             "current_intent": target,
             "next_agent": target,
             "agent_outputs": {
                 **state.get("agent_outputs", {}),
-                "coordinator": f"意图识别：{raw_content[:80]}",
+                "coordinator": coordinator_output,
             },
         }
 
@@ -121,6 +126,6 @@ async def coordinator_node(state: AgentState) -> dict:
         "next_agent": END,
         "agent_outputs": {
             **state.get("agent_outputs", {}),
-            "coordinator": "直接回复",
+            "coordinator": json.dumps({"reasoning": "直接回复", "confidence": 1.0}, ensure_ascii=False),
         },
     }

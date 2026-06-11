@@ -51,8 +51,8 @@ interface AppState {
   activeDomain: string
   setActiveDomain: (domain: string) => void
 
-  masteryData: Record<string, { mastery: number; last_review_ts: number; attempts: number }>
-  setMasteryData: (data: Record<string, { mastery: number; last_review_ts: number; attempts: number }>) => void
+  masteryData: Record<string, { mastery: number; last_review_ts: number; attempts: number; history?: Array<{ score: number; timestamp: number }> }>
+  setMasteryData: (data: Record<string, { mastery: number; last_review_ts: number; attempts: number; history?: Array<{ score: number; timestamp: number }> }>) => void
 
   wsConnected: boolean
   setWsConnected: (connected: boolean) => void
