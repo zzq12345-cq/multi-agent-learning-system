@@ -14,6 +14,7 @@ interface AppState {
 
   messages: ChatMessage[]
   addMessage: (msg: ChatMessage) => void
+  setMessages: (msgs: ChatMessage[]) => void
   updateLastAssistantContent: (content: string) => void
   clearMessages: () => void
 
@@ -89,6 +90,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   messages: [],
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
+  setMessages: (msgs) => set({ messages: msgs }),
   updateLastAssistantContent: (content) => set((s) => {
     const msgs = [...s.messages]
     let lastIdx = -1

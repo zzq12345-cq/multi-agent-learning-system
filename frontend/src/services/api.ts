@@ -32,6 +32,26 @@ export async function getSession(sessionId: string) {
   return res.json()
 }
 
+/** 历史会话列表（按更新时间倒序） */
+export async function listHistorySessions(userId: string) {
+  const res = await fetch(`${BASE_URL}/history/sessions?user_id=${encodeURIComponent(userId)}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.sessions || []
+}
+
+/** 读取单条历史会话完整内容（直接读磁盘，后端重启后依然可用） */
+export async function getHistorySession(sessionId: string) {
+  const res = await fetch(`${BASE_URL}/history/sessions/${sessionId}`)
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function deleteSession(sessionId: string) {
+  const res = await fetch(`${BASE_URL}/chat/sessions/${sessionId}`, { method: 'DELETE' })
+  return res.ok
+}
+
 export async function listGraphs() {
   const res = await fetch('/api/learning/graphs')
   if (!res.ok) return []
