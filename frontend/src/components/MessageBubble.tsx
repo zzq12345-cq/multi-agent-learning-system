@@ -81,9 +81,11 @@ export default function MessageBubble({ message }: Props) {
           container.innerHTML = svg
           parent.replaceChild(container, code)
         } catch (e) {
-          // 渲染失败：保留原始代码块，清理 mermaid 残留错误节点
+          // suppressErrorRendering 已阻止 mermaid 插入错误节点
+          // 仅清理可能残留的临时渲染容器（id 以 "d" 前缀 + 我们的 id 命名）
           console.warn('Mermaid 渲染失败:', e)
-          document.querySelectorAll('[id^="dmermaid-"], [id^="mermaid-"] + style').forEach(el => el.remove())
+          const tempId = `dmermaid-${message.timestamp}-${i}`
+          document.getElementById(tempId)?.remove()
         }
       })
     }

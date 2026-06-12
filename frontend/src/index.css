@@ -318,5 +318,5 @@ body {
 [data-theme='dark'] .text-orange-600, [data-theme='dark'] .text-orange-700 { color: rgb(253 186 116); }
 [data-theme='dark'] .text-blue-600 { color: rgb(147 197 253); }
 
-/* Mermaid 渲染错误残留隐藏 */
-[id^="dmermaid-"], [id^="mermaid-"].error-icon { display: none !important; }
+/* Mermaid 渲染临时容器不可见（suppressErrorRendering 已阻止错误输出，此规则为最后兜底） */
+body > [id^="dmermaid-"] { position: absolute !important; left: -9999px !important; }

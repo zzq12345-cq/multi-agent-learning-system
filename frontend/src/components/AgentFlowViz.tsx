@@ -67,12 +67,12 @@ export default function AgentFlowViz() {
                 strokeWidth={i === routes.length - 1 ? 2 : 1}
                 strokeDasharray="6,4"
                 className={i === routes.length - 1 ? 'animate-[dash_1s_linear_infinite]' : ''}
-                markerEnd="url(#arrow)"
+                markerEnd="url(#agent-flow-arrow)"
               />
             )
           })}
           <defs>
-            <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <marker id="agent-flow-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
               <path d="M0,0 L6,3 L0,6" fill="none" stroke="rgb(var(--p-300))" strokeWidth="1" />
             </marker>
           </defs>
