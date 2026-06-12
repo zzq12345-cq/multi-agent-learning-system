@@ -13,8 +13,10 @@ from passlib.context import CryptContext
 from pathlib import Path
 import json
 
-# JWT 配置
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-only-secret-change-in-production")
+from app.config import JWT_SECRET_KEY
+
+# JWT 配置（密钥解析逻辑在 app/config.py：环境变量优先，未设置时随机生成）
+SECRET_KEY = JWT_SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 

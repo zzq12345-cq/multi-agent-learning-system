@@ -7,7 +7,52 @@ import OnboardingGuide from './OnboardingGuide'
 import Toast from './Toast'
 import { AGENTS } from '../types'
 import type { WSEvent } from '../types'
-import { Send, Code, BarChart3, RefreshCw, Brain, Square, ChevronRight } from 'lucide-react'
+import { Send, Code, BarChart3, RefreshCw, Brain, Square, ChevronRight, ShieldCheck } from 'lucide-react'
+
+// 出题互审系统卡片 — 评估师出题后由审查层审题，全程可视
+function PeerReviewCard({ content }: { content: string }) {
+  let data: { verdict: string; issues: string[]; round: number }
+  try {
+    data = JSON.parse(content)
+  } catch {
+    return null
+  }
+  const passed = data.verdict === 'pass'
+  return (
+    <div className="flex gap-3.5 items-start">
+      <div className="w-8 h-8 rounded-full bg-primary-50 border border-primary-200 flex items-center justify-center text-primary-500 flex-shrink-0">
+        <ShieldCheck className="w-4 h-4" />
+      </div>
+      <div className="max-w-[78%] px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-2xl rounded-tl-sm shadow-sm">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <span className="text-[10px] font-bold text-primary-600">质量互审 · 第 {data.round} 轮</span>
+          {passed ? (
+            <span className="px-1.5 py-0.5 rounded-full bg-primary-500 text-white text-[9px] font-bold">已通过同行评审 ✓</span>
+          ) : (
+            <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold">退回重出</span>
+          )}
+        </div>
+        {(data.issues || []).length > 0 && (
+          <ul className="space-y-0.5">
+            {data.issues.map((issue, i) => (
+              <li key={i} className="text-[10px] text-stone-600 flex items-start gap-1.5 leading-relaxed">
+                <span className="text-primary-400 flex-shrink-0">•</span>
+                <span>{issue}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {passed && (data.issues || []).length === 0 && (
+          <p className="text-[10px] text-stone-500 leading-relaxed">
+            {data.round > 1
+              ? '已按审查意见重新出题，直接放行。'
+              : '审查层已核对题目答案、难度与表述，未发现问题。'}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // Agent 协作进度内联组件
 function AgentProgressInline() {
@@ -68,6 +113,9 @@ function AgentProgressInline() {
 export default function ChatPanel() {
   const [input, setInput] = useState('')
   const [toast, setToast] = useState<string | null>(null)
+  const [demoPlaying, setDemoPlaying] = useState(false)
+  // ref 镜像：供 deps=[] 的 graph-send-message 监听器读取实时回放状态
+  const demoPlayingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -117,6 +165,17 @@ export default function ChatPanel() {
       const detail = (e as CustomEvent).detail
       if (detail?.message) {
         const store = useAppStore.getState()
+        // 演示回放期间拦截真实发送（如回放出的 QuizCard 被点击提交），仅本地记录
+        if (demoPlayingRef.current) {
+          store.addMessage({
+            id: crypto.randomUUID(),
+            role: 'user',
+            content: detail.message,
+            timestamp: Date.now(),
+          })
+          setToast('演示回放中，作答仅本地记录')
+          return
+        }
         // WS 未连接时明确提示并复位 loading，避免消息静默丢失、加载动画卡死
         if (!wsRef.current?.connected) {
           store.setLoading(false)
@@ -142,14 +201,15 @@ export default function ChatPanel() {
   }, [])
 
   // WebSocket 断开时复位加载状态，避免流式回复中途断线导致 isLoading 卡死
+  // （演示回放期间事件不走 WS，断线不应中断回放）
   useEffect(() => {
-    if (!wsConnected && useAppStore.getState().isLoading) {
+    if (!wsConnected && !demoPlaying && useAppStore.getState().isLoading) {
       setLoading(false)
       setActiveAgent(null)
       clearStreamingContent()
       setToast('连接中断，本次回复未完成')
     }
-  }, [wsConnected])
+  }, [wsConnected, demoPlaying])
 
   const handleWSEvent = useCallback((event: WSEvent) => {
     const store = useAppStore.getState()
@@ -216,6 +276,27 @@ export default function ChatPanel() {
         break
       }
 
+      case 'review_verdict':
+        // 出题互审：插入「质量互审」系统卡片，并在协作图上打审查标记
+        store.addMessage({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: JSON.stringify({
+            verdict: event.verdict || 'pass',
+            issues: event.issues || [],
+            round: event.round || 1,
+          }),
+          agentName: 'peer_review',
+          timestamp: event.timestamp || Date.now(),
+        })
+        store.addTrace({
+          agent: 'assessor',
+          action: 'review',
+          timestamp: event.timestamp || Date.now(),
+          detail: event.verdict || 'pass',
+        })
+        break
+
       case 'system_notice':
         store.addMessage({
           id: crypto.randomUUID(),
@@ -239,6 +320,26 @@ export default function ChatPanel() {
         break
     }
   }, [])
+
+  // 演示模式：剧本事件经 demo-ws-event 喂入，复用 handleWSEvent 管线；
+  // demo-playback 标记回放状态，用于显示徽标并抑制断线提示
+  useEffect(() => {
+    const onDemoEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail as WSEvent | undefined
+      if (detail?.type) handleWSEvent(detail)
+    }
+    const onDemoPlayback = (e: Event) => {
+      const playing = Boolean((e as CustomEvent).detail?.playing)
+      demoPlayingRef.current = playing
+      setDemoPlaying(playing)
+    }
+    window.addEventListener('demo-ws-event', onDemoEvent)
+    window.addEventListener('demo-playback', onDemoPlayback)
+    return () => {
+      window.removeEventListener('demo-ws-event', onDemoEvent)
+      window.removeEventListener('demo-playback', onDemoPlayback)
+    }
+  }, [handleWSEvent])
 
   const handleSend = async () => {
     const text = input.trim()
@@ -300,6 +401,16 @@ export default function ChatPanel() {
 
   return (
     <div className="h-full flex flex-col bg-ivory relative overflow-hidden">
+      {/* 演示回放徽标 */}
+      {demoPlaying && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500 text-white text-[9px] font-bold shadow-md pointer-events-none">
+          <span className="flex h-1.5 w-1.5 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+          </span>
+          演示回放中
+        </div>
+      )}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 space-y-5">
         <ReviewReminder />
         {messages.length === 0 && <OnboardingGuide />}
@@ -332,7 +443,9 @@ export default function ChatPanel() {
         )}
 
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          msg.agentName === 'peer_review'
+            ? <PeerReviewCard key={msg.id} content={msg.content} />
+            : <MessageBubble key={msg.id} message={msg} />
         ))}
 
         {isLoading && streamingContent && (
@@ -355,7 +468,7 @@ export default function ChatPanel() {
         <div ref={messagesEndRef} />
       </div>
 
-      {!wsConnected && messages.length > 0 && (
+      {!wsConnected && !demoPlaying && messages.length > 0 && (
         <div className="px-4 py-1.5 bg-amber-50 border-t border-amber-200 text-[9px] text-amber-700 text-center">
           连接已断开，正在尝试重连…
         </div>
@@ -375,6 +488,11 @@ export default function ChatPanel() {
           {isLoading ? (
             <button
               onClick={() => {
+                // 回放期间停止按钮联动停止演示回放
+                if (demoPlaying) {
+                  window.dispatchEvent(new Event('demo-stop'))
+                  return
+                }
                 wsRef.current?.cancel()
                 setLoading(false)
                 setActiveAgent(null)

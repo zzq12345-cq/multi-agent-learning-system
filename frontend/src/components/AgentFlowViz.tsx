@@ -2,7 +2,7 @@
 
 import { useAppStore } from '../stores/useAppStore'
 import { AGENTS } from '../types'
-import { Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck } from 'lucide-react'
+import { Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck, Scale } from 'lucide-react'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   coordinator: Cpu,
@@ -27,6 +27,10 @@ export default function AgentFlowViz() {
 
   const activatedAgents = new Set(agentTraces.map((t) => t.agent))
   const latestRoute = routes[routes.length - 1]
+
+  // 出题互审标记：本轮存在 review 事件时在评估师节点旁显示（traces 每轮发送前清空）
+  const reviewTraces = agentTraces.filter((t) => t.action === 'review')
+  const latestReview = reviewTraces[reviewTraces.length - 1]
 
   // 解析置信度
   let confidence: number | null = null
@@ -96,6 +100,16 @@ export default function AgentFlowViz() {
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
+                {name === 'assessor' && latestReview && (
+                  <span
+                    className={`absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white shadow-sm ${
+                      latestReview.detail === 'pass' ? 'bg-primary-500' : 'bg-amber-500'
+                    }`}
+                    title={latestReview.detail === 'pass' ? '同行评审通过' : '审查退回重出'}
+                  >
+                    <Scale className="w-2 h-2" />
+                  </span>
+                )}
                 {isActive && (
                   <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75" />

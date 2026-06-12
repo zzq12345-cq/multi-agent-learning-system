@@ -3,9 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import { Brain, X, RefreshCw } from 'lucide-react'
-
-const DECAY_RATE = 0.1
-const THRESHOLD = 70
+import { decayedMastery, needsReview } from '../utils/mastery'
 
 export default function ReviewReminder() {
   const { masteryData, learningPath } = useAppStore()
@@ -18,15 +16,11 @@ export default function ReviewReminder() {
     return learningPath.nodes
       .filter(node => {
         const data = masteryData[node.id]
-        if (!data || data.mastery < THRESHOLD) return false
-        const days = (now - (data.last_review_ts || now)) / 86400
-        const decayed = data.mastery * Math.exp(-DECAY_RATE * days)
-        return decayed < THRESHOLD
+        return !!data && needsReview(data.mastery, data.last_review_ts || now, now)
       })
       .map(node => {
         const data = masteryData[node.id]
-        const days = (Date.now() / 1000 - (data.last_review_ts || Date.now() / 1000)) / 86400
-        const currentMastery = Math.max(10, Math.round(data.mastery * Math.exp(-DECAY_RATE * days)))
+        const currentMastery = Math.round(decayedMastery(data.mastery, data.last_review_ts || now, now))
         return { id: node.id, name: node.name, currentMastery, originalMastery: Math.round(data.mastery) }
       })
       .slice(0, 3)

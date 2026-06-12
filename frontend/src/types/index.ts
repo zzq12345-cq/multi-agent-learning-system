@@ -79,6 +79,7 @@ export type WSEventType =
   | 'done'
   | 'error'
   | 'system_notice'
+  | 'review_verdict'
 
 export interface WSEvent {
   type: WSEventType
@@ -92,13 +93,17 @@ export interface WSEvent {
   user_profile?: StudentProfile | null
   node_states?: Record<string, { status: string; score?: number | null }> | null
   mastery_data?: Record<string, { mastery: number; last_review_ts: number; attempts: number; history?: Array<{ score: number; timestamp: number }> }> | null
+  /** 出题互审（review_verdict 事件）：审查结论 / 意见列表 / 第 N 轮 */
+  verdict?: 'pass' | 'revise'
+  issues?: string[]
+  round?: number
   error?: string
   timestamp?: number
 }
 
 export interface AgentTrace {
   agent: string
-  action: 'start' | 'end' | 'route'
+  action: 'start' | 'end' | 'route' | 'review'
   timestamp: number
   detail?: string
   reasoning?: string

@@ -1,5 +1,11 @@
 """Agent 自我反思 — 输出质量检查"""
 
+import json
+
+# 出题难度合法区间（与 assessor 提示词中 difficulty 字段约定一致）
+QUIZ_DIFFICULTY_MIN = 1
+QUIZ_DIFFICULTY_MAX = 5
+
 
 def check_planner_output(content: str, learning_path: dict | None) -> dict:
     """检查规划师输出质量
@@ -65,3 +71,62 @@ def check_assessor_output(content: str, result: dict | None) -> dict:
                 issues.append(f"题目 {q.get('id', '?')} 缺少答案")
 
     return {"pass": len(issues) == 0, "issues": issues}
+
+
+def _check_question_rules(q: dict) -> list[str]:
+    """单题规则检查：题干、难度边界、选择题答案是否在选项中"""
+    issues = []
+    qid = q.get("id", "?")
+    if not q.get("question"):
+        issues.append(f"题目 {qid} 缺少题干")
+    difficulty = q.get("difficulty")
+    if difficulty is not None and not (
+        QUIZ_DIFFICULTY_MIN <= difficulty <= QUIZ_DIFFICULTY_MAX
+    ):
+        issues.append(
+            f"题目 {qid} 难度越界（{difficulty}），"
+            f"应在 {QUIZ_DIFFICULTY_MIN}-{QUIZ_DIFFICULTY_MAX}"
+        )
+    options = q.get("options") or []
+    answer = str(q.get("answer", "")).strip()
+    if q.get("type") == "choice" and options and answer:
+        letters = {str(opt).strip()[:1].upper() for opt in options if str(opt).strip()}
+        if answer[:1].upper() not in letters:
+            issues.append(f"题目 {qid} 答案「{answer}」不在选项中")
+    return issues
+
+
+def review_quiz_rules(result: dict | None) -> dict:
+    """L0 出题规则质检（零 LLM 成本）
+
+    在 check_assessor_output 基础上追加题干缺失、难度越界、
+    选择题答案不在选项中等检查，返回 {"pass": bool, "issues": [...]}。
+    """
+    base = check_assessor_output("", result)
+    issues = list(base["issues"])
+    for q in (result or {}).get("questions", []):
+        issues.extend(_check_question_rules(q))
+    return {"pass": len(issues) == 0, "issues": issues}
+
+
+def parse_review_verdict(content: str) -> dict:
+    """解析 L1 审题 LLM 输出为 {"verdict": "pass"|"revise", "issues": [...]}
+
+    解析失败或字段非法时默认放行（pass），避免审查环节反向阻塞出题。
+    """
+    data = None
+    try:
+        start = content.find("{")
+        end = content.rfind("}") + 1
+        if start >= 0 and end > start:
+            data = json.loads(content[start:end])
+    except (json.JSONDecodeError, ValueError):
+        data = None
+
+    if not isinstance(data, dict) or data.get("verdict") not in ("pass", "revise"):
+        return {"verdict": "pass", "issues": []}
+
+    issues = [str(i) for i in data.get("issues", []) if i]
+    if data["verdict"] == "revise" and not issues:
+        issues = ["审查者建议修订题目"]
+    return {"verdict": data["verdict"], "issues": issues if data["verdict"] == "revise" else []}

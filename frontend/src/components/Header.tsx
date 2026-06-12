@@ -13,7 +13,7 @@ export default function Header() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/')}
-          onDoubleClick={() => { localStorage.setItem('demo_mode', 'true'); window.location.reload() }}
+          onDoubleClick={() => navigate('/learn?demo=true')}
           className="flex items-center gap-2 group text-left active:scale-95 transition-transform"
         >
           <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">

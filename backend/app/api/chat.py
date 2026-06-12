@@ -388,8 +388,11 @@ async def _stream_graph_events(
 
         # 流式 token（只推送适合直接展示的 Agent 输出）
         # coordinator 输出是路由决策，planner/assessor 输出是 JSON 需要后处理
-        if kind == "on_chat_model_stream" and tracker["agent"] in (
-            "tutor", "generator", "profiler"
+        # 带 internal 标记的调用（如摸底出题）属内部 JSON 生成，不外泄
+        if (
+            kind == "on_chat_model_stream"
+            and tracker["agent"] in ("tutor", "generator", "profiler")
+            and "internal" not in (event.get("tags") or [])
         ):
             chunk = event.get("data", {}).get("chunk")
             if chunk and hasattr(chunk, "content") and chunk.content:
@@ -399,6 +402,17 @@ async def _stream_graph_events(
                     "content": chunk.content,
                     "timestamp": _now(),
                 })
+
+        # 出题互审事件（评估师出题 → 审查层审题，agent 节点内派发）
+        if kind == "on_custom_event" and name == "review_verdict":
+            data = event.get("data", {}) or {}
+            await websocket.send_json({
+                "type": "review_verdict",
+                "verdict": data.get("verdict", "pass"),
+                "issues": data.get("issues", []),
+                "round": data.get("round", 1),
+                "timestamp": _now(),
+            })
 
         # 图执行结束
         if kind == "on_chain_end" and name == "LangGraph":

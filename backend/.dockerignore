@@ -1,0 +1,9 @@
+# 构建上下文排除项（减小镜像体积、避免泄露本地数据与密钥）
+venv/
+data/
+tests/
+**/__pycache__/
+.pytest_cache/
+*.log
+**/*.log
+.env

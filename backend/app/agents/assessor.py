@@ -1,12 +1,16 @@
 """评估师 Agent — 学习效果评估"""
 
 import json
-from langchain_core.messages import AIMessage, SystemMessage
+import os
+from langchain_core.callbacks.manager import adispatch_custom_event
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from loguru import logger
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import complete_node, find_node_by_name, select_current_node
 from app.services.mastery import record_assessment
 from app.services.memory import build_context_summary, get_conversation_window
+from app.services.reflection import parse_review_verdict, review_quiz_rules
 
 ASSESSOR_PROMPT = """你是一个学习评估专家（Assessor Agent）。
 你的职责是评估学生的学习效果，生成测试题，并给出反馈。
@@ -51,6 +55,19 @@ ASSESSOR_PROMPT = """你是一个学习评估专家（Assessor Agent）。
 学生画像：{profile}
 当前知识点：{node}"""
 
+REVIEWER_PROMPT = """你是一位资深导师（Peer Reviewer），正在对评估师刚出的题目进行同行审查。
+学生水平：{level}
+
+请逐题检查：
+1. 答案正确性：标注的 answer 是否确实正确
+2. 难度匹配：难度是否与学生水平匹配
+3. 表述清晰：题干与选项是否清晰、无歧义
+
+只输出 JSON（不要其他内容）：
+{{"verdict": "pass", "issues": []}}
+或
+{{"verdict": "revise", "issues": ["具体问题描述"]}}"""
+
 
 async def assessor_node(state: AgentState) -> dict:
     """评估师节点：生成测试或评判答案"""
@@ -84,6 +101,13 @@ async def assessor_node(state: AgentState) -> dict:
     if result and "score" in result:
         formatted = _format_score_result(result)
     elif result and "questions" in result:
+        # 出题互审：L0 规则质检 → L1 LLM 审题 →（不过则退回重出一次）
+        if _peer_review_enabled():
+            content, result = await _run_peer_review(
+                llm,
+                base_messages=[system_msg] + list(recent_messages),
+                content=content, result=result, profile=profile,
+            )
         formatted = _format_quiz(result)
     else:
         formatted = content
@@ -115,6 +139,73 @@ async def assessor_node(state: AgentState) -> dict:
             "last_assessment": result,
         },
     }
+
+
+def _peer_review_enabled() -> bool:
+    """PEER_REVIEW 环境开关：默认开启，off/0/false 时跳过审查（演示降级保险）"""
+    return os.environ.get("PEER_REVIEW", "on").lower() not in ("off", "0", "false")
+
+
+async def _dispatch_review_event(verdict: str, issues: list, round_num: int) -> None:
+    """派发互审 WS 自定义事件；无 runnable 上下文（如单测直调）时静默跳过"""
+    try:
+        await adispatch_custom_event(
+            "review_verdict",
+            {"verdict": verdict, "issues": issues, "round": round_num},
+        )
+    except RuntimeError:
+        pass
+
+
+async def _llm_review(llm, result: dict, profile: dict) -> dict:
+    """L1 轻量 LLM 审题（导师视角），调用失败时默认放行不阻塞出题"""
+    level = (profile or {}).get("knowledge_level", "intermediate")
+    messages = [
+        SystemMessage(content=REVIEWER_PROMPT.format(level=level)),
+        HumanMessage(content=json.dumps(result, ensure_ascii=False)),
+    ]
+    try:
+        response = await llm.ainvoke(messages)
+    except Exception as e:
+        logger.warning(f"L1 审题调用失败，默认放行: {e}")
+        return {"verdict": "pass", "issues": []}
+    return parse_review_verdict(response.content)
+
+
+async def _regenerate_quiz(llm, *, base_messages, content, issues) -> tuple[str, dict | None]:
+    """按审查意见退回重出一次（重出后不再复审，直接放行）"""
+    feedback = HumanMessage(content=(
+        "你刚出的题目未通过同行审查，问题如下：\n- " + "\n- ".join(issues)
+        + "\n请修正以上问题，重新输出完整的题目 JSON（保持原格式，不要输出其他内容）。"
+    ))
+    response = await llm.ainvoke(base_messages + [AIMessage(content=content), feedback])
+    return response.content, _try_parse_json(response.content)
+
+
+async def _run_peer_review(llm, *, base_messages, content, result, profile) -> tuple[str, dict]:
+    """出题互审子流程：L0 规则质检 → L1 LLM 审题 →（不过则退回重出，≤1 轮封顶）"""
+    l0 = review_quiz_rules(result)
+    if l0["pass"]:
+        l1 = await _llm_review(llm, result, profile)
+        verdict, issues = l1["verdict"], l1["issues"]
+    else:
+        verdict, issues = "revise", l0["issues"]
+
+    if verdict == "pass":
+        await _dispatch_review_event("pass", [], 1)
+        return content, result
+
+    await _dispatch_review_event("revise", issues, 1)
+    logger.info(f"出题互审未通过，退回重出: {issues}")
+    new_content, new_result = await _regenerate_quiz(
+        llm, base_messages=base_messages, content=content, issues=issues,
+    )
+    # 先校验重出结果再宣告通过，避免解析失败沿用原题时前端误显示「已重新出题」
+    if new_result and "questions" in new_result:
+        await _dispatch_review_event("pass", [], 2)
+        return new_content, new_result
+    await _dispatch_review_event("pass", ["重出解析失败，沿用原题放行"], 2)
+    return content, result  # 重出解析失败时保底沿用原题
 
 
 def _resolve_assessment_node(result: dict, learning_path: dict, node_states: dict) -> dict:

@@ -1,5 +1,7 @@
 """协调者 Agent — 意图识别和任务分发（增强版）"""
 
+import json
+
 from langchain_core.messages import AIMessage, SystemMessage
 from app.agents import AgentState, get_llm, PROFILER, PLANNER, GENERATOR, TUTOR, ASSESSOR, END
 from app.deps import LLMConfig
@@ -70,6 +72,21 @@ def _extract_reply(raw_content: str) -> str:
 
 async def coordinator_node(state: AgentState) -> dict:
     """协调者节点：识别意图并路由"""
+    # 摸底测验待判分时强制路由 profiler（程序级保障：答题消息形如
+    # 「第N题我选 X」会命中 LLM 规则 6 被误判给 assessor，导致判分分支失效）
+    if state.get("metadata", {}).get("profiler_quiz"):
+        return {
+            "current_intent": PROFILER,
+            "next_agent": PROFILER,
+            "agent_outputs": {
+                **state.get("agent_outputs", {}),
+                "coordinator": json.dumps(
+                    {"reasoning": "摸底测验作答待判分，定向画像师", "confidence": 1.0},
+                    ensure_ascii=False,
+                ),
+            },
+        }
+
     config = LLMConfig(**state.get("llm_config", {}))
     # 意图分类任务，temperature 设 0 保证路由稳定
     llm = get_llm(config, temperature=0)

@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from 'react'
 import { useAppStore } from '../stores/useAppStore'
-import { AlertTriangle, BarChart3, Target, Clock, TrendingUp } from 'lucide-react'
+import { AlertTriangle, BarChart3, FileText, Target, Clock, TrendingUp } from 'lucide-react'
 import MemoryCurveModal from './MemoryCurveModal'
+import ReportCardModal from './ReportCardModal'
+import { decayedMastery, needsReview } from '../utils/mastery'
 
 export default function ProgressDashboard() {
   const { learningPath, nodeStates, profile, agentOutputs, masteryData } = useAppStore()
   const [selectedNode, setSelectedNode] = useState<{ id: string; name: string } | null>(null)
+  const [showReport, setShowReport] = useState(false)
 
   const totalNodes = learningPath?.nodes?.length || 0
   const completedNodes = nodeStates.filter((n) => n.status === 'completed').length
@@ -22,27 +25,18 @@ export default function ProgressDashboard() {
   const reviewNodes = useMemo(() => {
     if (!masteryData || !learningPath?.nodes) return []
     const now = Date.now() / 1000
-    const DECAY_RATE = 0.1
-    const THRESHOLD = 70
 
     return learningPath.nodes
       .filter(node => {
         const data = masteryData[node.id]
-        if (!data || data.mastery < THRESHOLD) return false
-        const days = (now - (data.last_review_ts || now)) / 86400
-        const decayed = data.mastery * Math.exp(-DECAY_RATE * days)
-        return decayed < THRESHOLD
+        return !!data && needsReview(data.mastery, data.last_review_ts || now, now)
       })
       .map(node => {
         const data = masteryData[node.id]
-        const days = (now - (data.last_review_ts || now)) / 86400
-        const currentMastery = Math.round(
-          data.mastery * Math.exp(-DECAY_RATE * days)
-        )
         return {
           id: node.id,
           name: node.name,
-          currentMastery: Math.max(10, currentMastery),
+          currentMastery: Math.round(decayedMastery(data.mastery, data.last_review_ts || now, now)),
         }
       })
   }, [masteryData, learningPath])
@@ -72,9 +66,21 @@ export default function ProgressDashboard() {
     <div className="h-full flex flex-col bg-cream overflow-y-auto">
       {/* 头部统计 */}
       <div className="p-4 border-b border-stone-200/50">
-        <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-3">
-          学习进度
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+            学习进度
+          </h3>
+          {learningPath && (
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded-md border border-primary-200 bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors text-[9px] font-medium"
+              title="生成一页式学情报告"
+            >
+              <FileText className="w-3 h-3" />
+              生成学习报告
+            </button>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-2.5">
           <StatCard
@@ -233,6 +239,9 @@ export default function ProgressDashboard() {
           onClose={() => setSelectedNode(null)}
         />
       )}
+
+      {/* 学情报告卡弹窗 */}
+      {showReport && <ReportCardModal onClose={() => setShowReport(false)} />}
     </div>
   )
 }
@@ -255,7 +264,8 @@ function StatCard({ icon: Icon, label, value, sub }: {
   )
 }
 
-function RadarChart({ data }: { data: { label: string; value: number }[] }) {
+/** 雷达图（供学情报告卡复用） */
+export function RadarChart({ data }: { data: { label: string; value: number }[] }) {
   if (!data.length) return null
 
   const size = 160

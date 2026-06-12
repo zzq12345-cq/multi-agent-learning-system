@@ -1,6 +1,7 @@
 /** 记忆曲线弹窗 */
 
 import { X } from 'lucide-react'
+import { decayedMastery, daysUntilReview, REVIEW_THRESHOLD } from '../utils/mastery'
 
 interface MemoryCurveModalProps {
   nodeId: string
@@ -8,8 +9,6 @@ interface MemoryCurveModalProps {
   masteryData: { mastery: number; last_review_ts: number; history?: Array<{ score: number; timestamp: number }> }
   onClose: () => void
 }
-
-const DECAY_RATE = 0.1
 
 export default function MemoryCurveModal({ nodeName, masteryData, onClose }: MemoryCurveModalProps) {
   const history = masteryData.history || []
@@ -40,8 +39,7 @@ export default function MemoryCurveModal({ nodeName, masteryData, onClose }: Mem
   }))
 
   // 添加当前衰减点
-  const daysSinceLastReview = (now - masteryData.last_review_ts) / 86400
-  const currentDecayed = Math.max(10, masteryData.mastery * Math.exp(-DECAY_RATE * daysSinceLastReview))
+  const currentDecayed = decayedMastery(masteryData.mastery, masteryData.last_review_ts, now)
   const currentDays = (now - firstTimestamp) / 86400
 
   dataPoints.push({
@@ -50,9 +48,7 @@ export default function MemoryCurveModal({ nodeName, masteryData, onClose }: Mem
   })
 
   // 预测下次复习时间
-  const daysUntilThreshold = currentDecayed > 70
-    ? Math.log(currentDecayed / 70) / DECAY_RATE
-    : 0
+  const daysUntilThreshold = daysUntilReview(currentDecayed)
 
   // SVG 绘图参数
   const width = 440
@@ -145,9 +141,9 @@ export default function MemoryCurveModal({ nodeName, masteryData, onClose }: Mem
           {/* 阈值线 */}
           <line
             x1={padding.left}
-            y1={yScale(70)}
+            y1={yScale(REVIEW_THRESHOLD)}
             x2={width - padding.right}
-            y2={yScale(70)}
+            y2={yScale(REVIEW_THRESHOLD)}
             stroke="rgb(var(--p-400))"
             strokeWidth="1.5"
             strokeDasharray="6 3"
