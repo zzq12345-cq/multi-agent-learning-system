@@ -93,18 +93,19 @@ def _tfidf_search(
 
 
 def _get_embeddings_model():
-    """获取 OpenAI 兼容的 Embeddings 模型"""
+    """获取 OpenAI 兼容的 Embeddings 模型（不支持时返回 None）"""
     import os
     from langchain_openai import OpenAIEmbeddings
     api_key = os.environ.get("LLM_API_KEY", "")
     base_url = os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
-    if not api_key:
+    embed_model = os.environ.get("EMBEDDING_MODEL", "")
+    if not api_key or not embed_model:
         return None
     return OpenAIEmbeddings(
         api_key=api_key,
         base_url=base_url,
-        model="text-embedding-v1",  # 通用嵌入模型名
-        request_timeout=30,
+        model=embed_model,
+        request_timeout=15,
     )
 
 
@@ -172,9 +173,25 @@ class VectorRAG:
         if self.chunks:
             self.tfidf_docs = _compute_tfidf(self.chunks)
 
-        # 尝试构建向量索引
-        self._build_vector_index()
+        # 尝试加载已缓存的向量索引（不调用 API，避免阻塞首次请求）
+        self._try_load_cached_index()
         self._loaded = True
+
+    def _try_load_cached_index(self):
+        """仅加载磁盘缓存的向量索引，不调用 API"""
+        if not self.chunks:
+            return
+        INDEX_DIR.mkdir(parents=True, exist_ok=True)
+        content_hash = _content_hash(self.chunks)
+        cache_file = INDEX_DIR / f"{content_hash}.npy"
+        if cache_file.exists():
+            try:
+                self.embeddings = np.load(str(cache_file))
+                if self.embeddings.shape[0] == len(self.chunks):
+                    self._vector_ready = True
+                    logger.info(f"向量索引命中缓存：{len(self.chunks)} chunks")
+            except Exception:
+                pass
 
     def _build_vector_index(self):
         """构建或加载向量索引"""
