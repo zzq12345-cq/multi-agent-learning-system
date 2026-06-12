@@ -230,6 +230,10 @@ body {
 .markdown-content table { @apply w-full border-collapse mb-4 text-xs; }
 .markdown-content th { @apply bg-cream border border-stone-200 px-4 py-2.5 text-left font-semibold text-stone-800; }
 .markdown-content td { @apply border border-stone-200/70 px-4 py-2 text-stone-700; }
+.markdown-content details { @apply mb-3 border border-stone-200 rounded-lg overflow-hidden; }
+.markdown-content details summary { @apply px-3 py-2 bg-cream cursor-pointer font-medium text-stone-700 select-none hover:bg-stone-100 transition-colors; }
+.markdown-content details[open] summary { @apply border-b border-stone-200; }
+.markdown-content details > :not(summary) { @apply px-3 py-2; }
 
 /* ReactFlow 面板样式适配（随主题变化） */
 .react-flow__background {

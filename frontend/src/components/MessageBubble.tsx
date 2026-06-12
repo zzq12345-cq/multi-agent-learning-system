@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import mermaid from 'mermaid'
 import type { ChatMessage } from '../types'
 import { AGENTS } from '../types'
@@ -151,7 +152,7 @@ export default function MessageBubble({ message }: Props) {
             }
             return (
               <div ref={mermaidRef} className="markdown-content leading-relaxed">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                   {message.content}
                 </ReactMarkdown>
               </div>
