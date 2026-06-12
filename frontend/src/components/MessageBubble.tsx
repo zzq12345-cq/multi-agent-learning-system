@@ -7,8 +7,8 @@ import { AGENTS } from '../types'
 import { Cpu, Sparkles, Compass, Wand2, BookOpen, ShieldCheck, User } from 'lucide-react'
 import QuizCard from './QuizCard'
 
-// 初始化 mermaid（中性主题，四套主题下可读）
-mermaid.initialize({ startOnLoad: false, theme: 'neutral' })
+// 初始化 mermaid（中性主题，四套主题下可读；抑制错误 DOM 输出）
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', suppressErrorRendering: true })
 
 interface QuizQuestion {
   id: string
@@ -70,15 +70,20 @@ export default function MessageBubble({ message }: Props) {
       const codes = mermaidRef.current.querySelectorAll('code.language-mermaid')
       codes.forEach(async (code, i) => {
         const parent = code.parentElement
-        if (!parent || parent.querySelector('svg')) return
+        if (!parent || parent.querySelector('.mermaid-diagram')) return
+        const raw = code.textContent || ''
+        if (!raw.trim()) return
         try {
-          const { svg } = await mermaid.render(`mermaid-${message.timestamp}-${i}`, code.textContent || '')
+          const id = `mermaid-${message.timestamp}-${i}-${Math.random().toString(36).slice(2, 6)}`
+          const { svg } = await mermaid.render(id, raw)
           const container = document.createElement('div')
           container.className = 'mermaid-diagram my-3'
           container.innerHTML = svg
           parent.replaceChild(container, code)
         } catch (e) {
+          // 渲染失败：保留原始代码块，清理 mermaid 残留错误节点
           console.warn('Mermaid 渲染失败:', e)
+          document.querySelectorAll('[id^="dmermaid-"], [id^="mermaid-"] + style').forEach(el => el.remove())
         }
       })
     }

@@ -317,3 +317,6 @@ body {
 [data-theme='dark'] .text-purple-600 { color: rgb(216 180 254); }
 [data-theme='dark'] .text-orange-600, [data-theme='dark'] .text-orange-700 { color: rgb(253 186 116); }
 [data-theme='dark'] .text-blue-600 { color: rgb(147 197 253); }
+
+/* Mermaid 渲染错误残留隐藏 */
+[id^="dmermaid-"], [id^="mermaid-"].error-icon { display: none !important; }
