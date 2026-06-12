@@ -23,7 +23,7 @@ def test_simple_rag_search():
         "循环 for while break",
         "函数定义 参数 返回值",
     ]
-    rag.tfidf_docs, _ = _compute_tfidf(rag.chunks)
+    rag.tfidf_docs = _compute_tfidf(rag.chunks)
     rag.metadata = [{"source": "a"}, {"source": "b"}, {"source": "c"}]
 
     results = rag.search("变量", top_k=1)
