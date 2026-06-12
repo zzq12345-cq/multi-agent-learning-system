@@ -32,32 +32,21 @@ export default function AgentFlowViz() {
   const reviewTraces = agentTraces.filter((t) => t.action === 'review')
   const latestReview = reviewTraces[reviewTraces.length - 1]
 
-  // 解析置信度与路由理由
-  let confidence: number | null = null
+  // 解析路由理由
   let routeReasoning = ''
   if (latestRoute?.reasoning) {
     try {
       const parsed = JSON.parse(latestRoute.reasoning)
-      if (parsed.confidence !== undefined) {
-        confidence = parsed.confidence
-      }
       if (parsed.reasoning) {
         routeReasoning = parsed.reasoning
       }
     } catch {
-      // 纯文本理由
       routeReasoning = latestRoute.reasoning
     }
   }
 
   return (
-    <div className="relative w-full bg-cream rounded-xl border border-stone-200 p-3 overflow-hidden">
-      {/* 置信度徽章 */}
-      {confidence !== null && (
-        <div className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full bg-primary-500 text-white text-[9px] font-bold shadow-sm">
-          置信度 {Math.round(confidence * 100)}%
-        </div>
-      )}
+    <div className="w-full bg-cream rounded-xl border border-stone-200 p-3 overflow-hidden">
 
       {/* 图标行 + 连线（SVG 仅覆盖此区域） */}
       <div className="relative">
