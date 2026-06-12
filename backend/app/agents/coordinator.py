@@ -123,7 +123,6 @@ async def coordinator_node(state: AgentState) -> dict:
 
     target, confidence = _resolve_route(raw_content.lower())
     if target:
-        import json
         coordinator_output = json.dumps({
             "reasoning": raw_content[:80],
             "confidence": confidence

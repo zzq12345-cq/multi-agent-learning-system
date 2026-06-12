@@ -174,8 +174,9 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
             except Exception as e:
                 # 单条消息执行失败：回错误事件并复位前端状态，连接保持
                 logger.error(f"[{session_id}] Agent 执行失败: {e}")
+                error_msg = _friendly_error(e)
                 await _send_abort_events(
-                    websocket, tracker["agent"], "服务处理异常，请重试",
+                    websocket, tracker["agent"], error_msg,
                 )
                 continue
 
