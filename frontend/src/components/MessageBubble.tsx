@@ -58,7 +58,30 @@ function getSuggestedReplies(agentName: string | undefined, content: string): st
 }
 
 function parseQuizFromContent(content: string): QuizQuestion[] | null {
-  // 检测是否包含测试题格式
+  // 尝试从 JSON 格式提取题目（兼容后端未格式化的裸 JSON 输出）
+  if (content.includes('"questions"') && content.includes('"options"')) {
+    try {
+      let jsonStr = content
+      // 去掉 ```json ... ``` 包裹
+      const codeBlockMatch = jsonStr.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
+      if (codeBlockMatch) jsonStr = codeBlockMatch[1]
+      const startIdx = jsonStr.indexOf('{')
+      const endIdx = jsonStr.lastIndexOf('}') + 1
+      if (startIdx >= 0 && endIdx > startIdx) {
+        const parsed = JSON.parse(jsonStr.slice(startIdx, endIdx))
+        if (parsed.questions && Array.isArray(parsed.questions)) {
+          const questions: QuizQuestion[] = parsed.questions.map((q: any, i: number) => ({
+            id: q.id || `q${i + 1}`,
+            question: q.question || '',
+            options: q.options || [],
+          })).filter((q: QuizQuestion) => q.question && q.options.length >= 2)
+          if (questions.length > 0) return questions
+        }
+      }
+    } catch { /* JSON 解析失败，继续尝试文本格式 */ }
+  }
+
+  // 检测文本格式的测试题（后端已格式化的情况）
   if (!content.includes('学习检测') && !content.includes('第 1 题') && !content.includes('第1题')) return null
 
   const questions: QuizQuestion[] = []
