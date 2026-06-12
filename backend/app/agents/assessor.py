@@ -110,7 +110,12 @@ async def assessor_node(state: AgentState) -> dict:
             )
         formatted = _format_quiz(result)
     else:
-        formatted = content
+        # 兜底：如果 JSON 解析失败但内容明显是题目格式，尝试宽松解析
+        if '"questions"' in content and '"options"' in content:
+            logger.warning("评估师输出 JSON 解析失败，尝试宽松提取")
+            formatted = _fallback_format_quiz(content)
+        else:
+            formatted = content
 
     # 评分后更新掌握度与节点状态
     metadata = {**state.get("metadata", {}), "last_assessment": result}
@@ -236,13 +241,30 @@ def _resolve_assessment_node(result: dict, learning_path: dict, node_states: dic
 
 
 def _try_parse_json(content: str) -> dict | None:
+    """从 LLM 回复中提取 JSON（兼容 markdown 代码块包裹）"""
+    # 先尝试去掉 ```json ... ``` 包裹
+    cleaned = content
+    if "```" in content:
+        import re
+        match = re.search(r'```(?:json)?\s*\n?(.*?)\n?\s*```', content, re.DOTALL)
+        if match:
+            cleaned = match.group(1)
     try:
-        start = content.find("{")
-        end = content.rfind("}") + 1
+        start = cleaned.find("{")
+        end = cleaned.rfind("}") + 1
         if start >= 0 and end > start:
-            return json.loads(content[start:end])
+            return json.loads(cleaned[start:end])
     except (json.JSONDecodeError, ValueError):
         pass
+    # 原始内容再试一次（没有代码块的情况）
+    if cleaned is not content:
+        try:
+            start = content.find("{")
+            end = content.rfind("}") + 1
+            if start >= 0 and end > start:
+                return json.loads(content[start:end])
+        except (json.JSONDecodeError, ValueError):
+            pass
     return None
 
 
@@ -254,6 +276,28 @@ def _format_quiz(quiz: dict) -> str:
         lines.append(q.get("question", ""))
         if q.get("options"):
             for opt in q["options"]:
+                lines.append(f"  {opt}")
+        lines.append("")
+    lines.append("请回答以上问题，我会为你评分并给出反馈。")
+    return "\n".join(lines)
+
+
+def _fallback_format_quiz(content: str) -> str:
+    """JSON 解析失败时的宽松提取：用正则逐题提取 question + options"""
+    import re
+    questions = re.findall(r'"question"\s*:\s*"([^"]+)"', content)
+    options_blocks = re.findall(r'"options"\s*:\s*\[(.*?)\]', content, re.DOTALL)
+
+    if not questions:
+        return "📝 正在生成测试题，请稍候再试..."
+
+    lines = ["📝 **学习检测**\n"]
+    for i, q in enumerate(questions):
+        lines.append(f"**第 {i + 1} 题**")
+        lines.append(q)
+        if i < len(options_blocks):
+            opts = re.findall(r'"([^"]+)"', options_blocks[i])
+            for opt in opts:
                 lines.append(f"  {opt}")
         lines.append("")
     lines.append("请回答以上问题，我会为你评分并给出反馈。")
