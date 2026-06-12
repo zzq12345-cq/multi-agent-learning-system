@@ -178,7 +178,7 @@ export default function MessageBubble({ message, isLast }: Props) {
 
         {/* 内容 */}
         <div
-          className={`px-3.5 py-2.5 rounded-xl leading-relaxed text-xs border ${
+          className={`px-3.5 py-2.5 rounded-xl leading-relaxed text-xs border w-full overflow-hidden ${
             isUser
               ? 'bg-oat border-stone-200 text-stone-900 rounded-tr-sm shadow-[0_1px_2px_rgba(0,0,0,0.01)]'
               : 'bg-surface border-stone-200/80 text-stone-800 rounded-tl-sm shadow-[0_1px_3px_rgba(0,0,0,0.01)]'

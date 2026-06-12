@@ -201,6 +201,8 @@ body {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   color: rgb(var(--n-700));
   line-height: 1.75;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .markdown-content h1 {
   font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;

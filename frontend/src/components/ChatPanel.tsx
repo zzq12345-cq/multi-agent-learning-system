@@ -23,7 +23,7 @@ function PeerReviewCard({ content }: { content: string }) {
       <div className="w-8 h-8 rounded-full bg-primary-50 border border-primary-200 flex items-center justify-center text-primary-500 flex-shrink-0">
         <ShieldCheck className="w-4 h-4" />
       </div>
-      <div className="max-w-[78%] px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-2xl rounded-tl-sm shadow-sm">
+      <div className="w-[80%] px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-2xl rounded-tl-sm shadow-sm">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="text-[10px] font-bold text-primary-600">质量互审 · 第 {data.round} 轮</span>
           {passed ? (
