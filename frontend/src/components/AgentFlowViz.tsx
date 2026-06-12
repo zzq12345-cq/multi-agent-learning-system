@@ -51,7 +51,7 @@ export default function AgentFlowViz() {
   }
 
   return (
-    <div className="w-full bg-cream rounded-xl border border-stone-200 p-3 overflow-hidden">
+    <div className="relative w-full bg-cream rounded-xl border border-stone-200 p-3 overflow-hidden">
       {/* 置信度徽章 */}
       {confidence !== null && (
         <div className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full bg-primary-500 text-white text-[9px] font-bold shadow-sm">
