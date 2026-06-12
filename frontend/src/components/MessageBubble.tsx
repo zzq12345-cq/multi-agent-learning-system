@@ -112,7 +112,7 @@ export default function MessageBubble({ message }: Props) {
       </div>
 
       {/* 消息体 */}
-      <div className={`max-w-[80%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col ${isUser ? 'items-end max-w-[80%]' : 'items-start w-[80%]'}`}>
         {/* Agent 标签 */}
         {agent && !isUser && (
           <div className="mb-1 flex items-center gap-1.5">
