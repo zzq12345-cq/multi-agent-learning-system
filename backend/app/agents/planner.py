@@ -1,7 +1,8 @@
-"""规划师 Agent — 学习路径规划"""
+"""规划师 Agent — 学习路径规划（含自适应调整）"""
 
 import json
 from langchain_core.messages import AIMessage, SystemMessage
+from loguru import logger
 from app.agents import AgentState, get_llm, END
 from app.deps import LLMConfig
 from app.services.learning_engine import init_node_states, merge_node_states, select_current_node
@@ -55,23 +56,59 @@ PLANNER_PROMPT = """你是一个学习路径规划专家（Planner Agent）。
 - 若「当前学习路径」列出了已有节点，说明是调整既有路径：
   保留仍然适用节点的 id 和 name 不变，只增删或修改必要的节点，不要重新编号"""
 
+ADAPTIVE_PROMPT = """你是一个学习路径自适应调整专家。
+
+学生在「{node_name}」的评估中得分 {score} 分，暴露了以下薄弱点：
+{weak_points}
+
+学习建议：{suggestions}
+
+请在现有学习路径中插入 1-3 个补强节点（reinforcement），帮助学生巩固薄弱环节。
+
+调整原则：
+1. 补强节点插入到当前失败节点之前（作为前置）
+2. 补强节点难度应低于失败节点，专注于薄弱知识点
+3. 保留原有节点的 id、name 和已有进度
+4. 补强节点 id 使用 "reinforce_" 前缀
+5. 为补强节点添加合理的边连接
+
+现有学习路径：
+{current_path}
+
+输出完整的调整后路径 JSON（保持原格式）。"""
+
 
 async def planner_node(state: AgentState) -> dict:
-    """规划师节点：生成或调整学习路径"""
+    """规划师节点：生成或调整学习路径（含自适应补强）"""
     config = LLMConfig(**state.get("llm_config", {}))
     llm = get_llm(config, temperature=0.5)
 
     profile = state.get("user_profile", {})
     current_path = state.get("learning_path", {})
+    metadata = state.get("metadata", {})
+    adaptation = metadata.get("adaptation_trigger")
+
     # 已有路径节点时进入调整模式：增量合并而非整体重建
     is_adjust = bool(current_path and current_path.get("nodes"))
 
     context_summary = build_context_summary(state)
     profile_str = _format_profile(profile) if profile else "未建立"
-    system_msg = SystemMessage(content=PLANNER_PROMPT.format(
-        profile=profile_str,
-        current_path=_describe_current_path(state) if is_adjust else "无",
-    ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
+
+    # 自适应模式：评估触发的补强调整
+    if adaptation and is_adjust:
+        logger.info(f"规划师进入自适应调整模式: {adaptation.get('weak_points')}")
+        system_msg = SystemMessage(content=ADAPTIVE_PROMPT.format(
+            node_name=adaptation.get("node_name", "未知"),
+            score=adaptation.get("score", 0),
+            weak_points="、".join(adaptation.get("weak_points", [])),
+            suggestions="；".join(adaptation.get("suggestions", [])),
+            current_path=_describe_current_path(state),
+        ) + f"\n\n学生画像：{profile_str}\n\n--- 当前上下文 ---\n{context_summary}")
+    else:
+        system_msg = SystemMessage(content=PLANNER_PROMPT.format(
+            profile=profile_str,
+            current_path=_describe_current_path(state) if is_adjust else "无",
+        ) + f"\n\n--- 当前上下文 ---\n{context_summary}")
 
     recent_messages = get_conversation_window(state["messages"])
     response = await llm.ainvoke([system_msg] + list(recent_messages))
@@ -90,16 +127,24 @@ async def planner_node(state: AgentState) -> dict:
             except Exception:
                 pass
 
-        summary = _generate_path_summary(learning_path)
+        if adaptation and is_adjust:
+            summary = _generate_adaptation_summary(learning_path, adaptation)
+        else:
+            summary = _generate_path_summary(learning_path)
+
         if is_adjust:
-            # 调整模式：按节点名称合并，同名节点保留进度与掌握度；
-            # 跨主题重新规划时名称不重合，自然全新初始化
+            # 调整模式：按节点名称合并，同名节点保留进度与掌握度
             old_nodes = current_path.get("nodes", [])
             node_states = merge_node_states(learning_path, state.get("node_states", {}), old_nodes)
             mastery_data = merge_mastery_data(learning_path, state.get("mastery_data", {}), old_nodes)
         else:
             node_states = init_node_states(learning_path)
             mastery_data = init_mastery_data(learning_path)
+
+        # 清除自适应触发标记，避免下次重复触发
+        new_metadata = {**metadata}
+        new_metadata.pop("adaptation_trigger", None)
+
         return {
             "messages": [AIMessage(content=summary, name="planner")],
             "learning_path": learning_path,
@@ -107,9 +152,10 @@ async def planner_node(state: AgentState) -> dict:
             "mastery_data": mastery_data,
             "current_node": select_current_node(learning_path, node_states),
             "next_agent": END,
+            "metadata": new_metadata,
             "agent_outputs": {
                 **state.get("agent_outputs", {}),
-                "planner": "路径调整完成" if is_adjust else "路径规划完成",
+                "planner": "自适应调整完成" if adaptation else ("路径调整完成" if is_adjust else "路径规划完成"),
             },
         }
 
@@ -170,6 +216,33 @@ def _generate_path_summary(path: dict) -> str:
         f"⏱️ 预计学习时间：{hours} 小时\n\n"
         f"路径已生成！你可以说「开始学习」进入第一个知识点，"
         f"或者告诉我需要调整的地方。"
+    )
+
+
+def _generate_adaptation_summary(path: dict, adaptation: dict) -> str:
+    """生成自适应调整摘要"""
+    weak_points = adaptation.get("weak_points", [])
+    score = adaptation.get("score", 0)
+    node_name = adaptation.get("node_name", "")
+    nodes = path.get("nodes", [])
+
+    # 找出新增的补强节点
+    reinforce_nodes = [n for n in nodes if n.get("id", "").startswith("reinforce_")]
+    reinforce_list = "\n".join(
+        f"  📌 **{n['name']}** — {n.get('description', '巩固练习')}"
+        for n in reinforce_nodes
+    )
+    if not reinforce_list:
+        # 没有 reinforce_ 前缀时，按新增节点判断
+        reinforce_list = "  📌 已调整路径结构以覆盖薄弱点"
+
+    return (
+        f"🔄 **学习路径自适应调整**\n\n"
+        f"检测到你在「{node_name}」的评估中得分 **{score} 分**，"
+        f"薄弱点：{'、'.join(weak_points)}\n\n"
+        f"已为你插入补强节点：\n{reinforce_list}\n\n"
+        f"📋 调整后共 {len(nodes)} 个知识点\n\n"
+        f"建议先完成补强内容再重新挑战原知识点，加油！💪"
     )
 
 

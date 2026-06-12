@@ -30,11 +30,9 @@ def _route_after_profiler(state: AgentState) -> str:
 
 
 def _route_after_assessor(state: AgentState) -> str:
-    """评估师完成后：如果有薄弱点且得分低，触发规划师调整"""
+    """评估师完成后：存在自适应触发时，路由到规划师插入补强节点"""
     metadata = state.get("metadata", {})
-    assessment = metadata.get("last_assessment", {})
-    weak_points = assessment.get("weak_points", [])
-    if weak_points and assessment.get("score", 100) < 70:
+    if metadata.get("adaptation_trigger"):
         return PLANNER
     return GRAPH_END
 

@@ -113,6 +113,7 @@ async def assessor_node(state: AgentState) -> dict:
         formatted = content
 
     # 评分后更新掌握度与节点状态
+    metadata = {**state.get("metadata", {}), "last_assessment": result}
     if result and "score" in result:
         if not current_node.get("id"):
             current_node = _resolve_assessment_node(result, learning_path, node_states)
@@ -124,6 +125,19 @@ async def assessor_node(state: AgentState) -> dict:
                 # 推进到下一个可学节点
                 current_node = select_current_node(learning_path, node_states)
 
+            # 自适应触发：得分低于 60 且存在薄弱点，通知规划师插入补强节点
+            weak_points = result.get("weak_points", [])
+            if score < 60 and weak_points and learning_path.get("nodes"):
+                metadata["adaptation_trigger"] = {
+                    "reason": "assessment_low_score",
+                    "score": score,
+                    "node_id": current_node.get("id", ""),
+                    "node_name": current_node.get("name", ""),
+                    "weak_points": weak_points,
+                    "suggestions": result.get("suggestions", []),
+                }
+                logger.info(f"自适应触发：{current_node.get('name')} 得分 {score}，薄弱点: {weak_points}")
+
     return {
         "messages": [AIMessage(content=formatted, name="assessor")],
         "node_states": node_states,
@@ -134,10 +148,7 @@ async def assessor_node(state: AgentState) -> dict:
             **state.get("agent_outputs", {}),
             "assessor": "评估完成",
         },
-        "metadata": {
-            **state.get("metadata", {}),
-            "last_assessment": result,
-        },
+        "metadata": metadata,
     }
 
 

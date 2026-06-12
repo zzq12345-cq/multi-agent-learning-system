@@ -82,11 +82,24 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_username')
     localStorage.removeItem('auth_user_id')
-    set({ user: null })
+    set({ user: null, messages: [], learningPath: null, nodeStates: [], masteryData: {}, profile: null })
   },
 
-  sessionId: crypto.randomUUID(),
-  setSessionId: (id) => set({ sessionId: id }),
+  sessionId: (() => {
+    const userId = localStorage.getItem('auth_user_id')
+    if (userId) {
+      const saved = localStorage.getItem(`session_id_${userId}`)
+      if (saved) return saved
+    }
+    const id = crypto.randomUUID()
+    if (userId) localStorage.setItem(`session_id_${userId}`, id)
+    return id
+  })(),
+  setSessionId: (id) => {
+    const userId = localStorage.getItem('auth_user_id')
+    if (userId) localStorage.setItem(`session_id_${userId}`, id)
+    set({ sessionId: id })
+  },
 
   messages: [],
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),

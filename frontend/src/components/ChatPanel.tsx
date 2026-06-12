@@ -130,6 +130,41 @@ export default function ChatPanel() {
     wsConnected,
   } = useAppStore()
 
+  // 断点续学：页面加载时恢复上次会话状态
+  const resumedRef = useRef(false)
+  useEffect(() => {
+    if (resumedRef.current) return
+    resumedRef.current = true
+    const store = useAppStore.getState()
+    // 只有当前没有消息时才尝试恢复（避免覆盖已在进行中的会话）
+    if (store.messages.length > 0) return
+    import('../services/api').then(({ getHistorySession }) => {
+      getHistorySession(sessionId).then((data) => {
+        if (!data || !data.exists) return
+        const msgs = (data.messages || []).map((m: any) => ({
+          id: crypto.randomUUID(),
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          agentName: m.name || undefined,
+          timestamp: Date.now(),
+        }))
+        if (msgs.length > 0) store.setMessages(msgs)
+        if (data.learning_path?.title) store.setLearningPath(data.learning_path)
+        if (data.node_states && Object.keys(data.node_states).length > 0) {
+          const states = Object.entries(data.node_states).map(([nodeId, s]: [string, any]) => ({
+            nodeId,
+            status: s.status,
+            score: s.score ?? undefined,
+          }))
+          store.setNodeStates(states)
+        }
+        if (data.mastery_data && Object.keys(data.mastery_data).length > 0) {
+          store.setMasteryData(data.mastery_data)
+        }
+      }).catch(() => {})
+    })
+  }, [sessionId])
+
   useEffect(() => {
     const el = textareaRef.current
     if (el) {

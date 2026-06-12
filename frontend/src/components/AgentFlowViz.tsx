@@ -32,16 +32,21 @@ export default function AgentFlowViz() {
   const reviewTraces = agentTraces.filter((t) => t.action === 'review')
   const latestReview = reviewTraces[reviewTraces.length - 1]
 
-  // 解析置信度
+  // 解析置信度与路由理由
   let confidence: number | null = null
+  let routeReasoning = ''
   if (latestRoute?.reasoning) {
     try {
       const parsed = JSON.parse(latestRoute.reasoning)
       if (parsed.confidence !== undefined) {
         confidence = parsed.confidence
       }
+      if (parsed.reasoning) {
+        routeReasoning = parsed.reasoning
+      }
     } catch {
-      // 忽略解析错误
+      // 纯文本理由
+      routeReasoning = latestRoute.reasoning
     }
   }
 
@@ -126,6 +131,16 @@ export default function AgentFlowViz() {
           )
         })}
       </div>
+
+      {/* 路由决策理由 */}
+      {latestRoute && routeReasoning && (
+        <div className="mt-2 px-2 py-1.5 rounded-lg bg-stone-50 border border-stone-100">
+          <p className="text-[9px] text-stone-500 leading-relaxed">
+            <span className="font-medium text-stone-600">💡 路由决策：</span>
+            {routeReasoning.length > 60 ? routeReasoning.slice(0, 60) + '…' : routeReasoning}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
