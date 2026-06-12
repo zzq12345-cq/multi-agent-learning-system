@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -15,6 +15,46 @@ interface QuizQuestion {
   id: string
   question: string
   options: string[]
+}
+
+/** 根据 Agent 类型和内容生成快捷回复建议 */
+function getSuggestedReplies(agentName: string | undefined, content: string): string[] {
+  if (!agentName) return []
+
+  switch (agentName) {
+    case 'planner':
+      if (content.includes('路径已生成') || content.includes('学习节点')) {
+        return ['开始学习', '调整路径', '测试一下']
+      }
+      if (content.includes('自适应调整')) {
+        return ['开始补强', '跳过补强', '查看进度']
+      }
+      return []
+
+    case 'generator':
+      return ['继续下一个知识点', '测试一下', '再详细讲讲']
+
+    case 'tutor':
+      return ['我理解了，继续', '还是不太懂', '举个例子']
+
+    case 'assessor':
+      if (content.includes('评估结果')) {
+        return ['继续学习', '复习薄弱点', '再测一次']
+      }
+      return []
+
+    case 'profiler':
+      if (content.includes('画像') || content.includes('评估完成')) {
+        return ['开始规划学习路径', '我想学 Python', '我想学前端']
+      }
+      return []
+
+    case 'coordinator':
+      return []
+
+    default:
+      return []
+  }
 }
 
 function parseQuizFromContent(content: string): QuizQuestion[] | null {
@@ -49,6 +89,7 @@ function parseQuizFromContent(content: string): QuizQuestion[] | null {
 
 interface Props {
   message: ChatMessage
+  isLast?: boolean
 }
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -60,11 +101,21 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?:
   assessor: ShieldCheck,
 }
 
-export default function MessageBubble({ message }: Props) {
+export default function MessageBubble({ message, isLast }: Props) {
   const isUser = message.role === 'user'
   const agent = message.agentName ? AGENTS[message.agentName] : null
   const AgentIcon = agent ? ICON_MAP[message.agentName || ''] || Sparkles : null
   const mermaidRef = useRef<HTMLDivElement>(null)
+
+  // 快捷回复按钮（仅最后一条 AI 消息显示）
+  const suggestions = useMemo(() => {
+    if (isUser || !isLast) return []
+    return getSuggestedReplies(message.agentName, message.content)
+  }, [isUser, isLast, message.agentName, message.content])
+
+  const handleSuggestionClick = (text: string) => {
+    window.dispatchEvent(new CustomEvent('graph-send-message', { detail: { message: text } }))
+  }
 
   useEffect(() => {
     if (!isUser && mermaidRef.current) {
@@ -159,6 +210,21 @@ export default function MessageBubble({ message }: Props) {
             )
           })()}
         </div>
+
+        {/* 快捷回复按钮 */}
+        {suggestions.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {suggestions.map((text) => (
+              <button
+                key={text}
+                onClick={() => handleSuggestionClick(text)}
+                className="px-2.5 py-1 text-[10px] font-medium text-primary-600 bg-primary-50 border border-primary-200 rounded-full hover:bg-primary-100 hover:border-primary-300 transition-colors"
+              >
+                {text}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

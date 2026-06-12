@@ -477,11 +477,20 @@ export default function ChatPanel() {
           </div>
         )}
 
-        {messages.map((msg) => (
-          msg.agentName === 'peer_review'
-            ? <PeerReviewCard key={msg.id} content={msg.content} />
-            : <MessageBubble key={msg.id} message={msg} />
-        ))}
+        {messages.map((msg, idx) => {
+          if (msg.agentName === 'peer_review') {
+            return <PeerReviewCard key={msg.id} content={msg.content} />
+          }
+          // 快捷按钮只在最后一条 AI 消息 + 非加载状态时显示
+          let lastAiIdx = -1
+          for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'assistant' && messages[i].agentName !== 'peer_review' && messages[i].agentName !== 'system') {
+              lastAiIdx = i; break
+            }
+          }
+          const isLastAi = !isLoading && msg.role === 'assistant' && idx === lastAiIdx
+          return <MessageBubble key={msg.id} message={msg} isLast={isLastAi} />
+        })}
 
         {isLoading && streamingContent && (
           <MessageBubble
